@@ -12,8 +12,8 @@ When i got my first 3ds console, a couple of months ago, i wanted to customize t
 I started learning about 3ds hacking and very quickly learned of a very supportive and powerful community that has TON of knowledge regarding how the console works.
 
 My goal with this project is to build an open source alternative to the stock nintendo homemenu, that would allow the community to customize and easily redesign.
-Currently Pomelo has a very limited set of features and no flexibility regarding the design of the homemenu itself.
-I am hoping to implement a themes mechanism, similar to the one nintendo has, but more flexible.
+Currently Pomelo has a very limited set of features and changing the design requires writing C code :(
+I am hoping to implement a themes mechanism in the future, similar to the one nintendo has, but more flexible.
 
 ## Features
 Currently Pomelo is still in early development, with a lot of missing features and bugs. The features i focused on in the meantime are:
@@ -26,13 +26,17 @@ As you can see in the screenshots below, i am still playing around with the desi
 Currently, my vibe is something retro, right now i'm trying to make it look like a NDS.
 
 ## Installation
-Pomelo is using Luma3ds to load itself instead of the stock nintendo homemenu, specifically it uses the "Game Patching" optional feature. Currently i only tested it on my console which is a New 3DS US.
+Pomelo is using Luma3ds "Game Patching" to replace the stock nintendo homemenu, note that "Game Patching" is optional feature, that has to be enabled. Currently i only tested it on my console which is a New 3DS US.
 Currently the project is still in **very early development**, the source code is available for those who wish to run it on their own consoles.
 
 For more details on installation, see the [github repo](https://github.com/ron-popov/3ds-Pomelo)
 
 ## Feedback
-I would love to hear your feedback and thoughts on this project, however, this is a side project of mine and i am working on it in my spare time, so please be patient <3
+I would love to hear your feedback and thoughts on this project, however, please note that this is a side project of mine and i am working on it in my spare time, so please be patient <3
+
+## Testing
+Pomelo is using Luma3ds Game Patching to load itself, instead of the stock homemenu, incase something goes wrong, simply remove the Pomelo `code.bin` and `exheader.bin` files from the SDCard and the stock homemenu should boot as normal.
+However POMELO HAS NOT BEEN THOROUGHLY TESTED, **USE AT YOUR OWN RISK**.
 
 ## Screenshots
 Pomelo running on real New 3DS hardware:
@@ -42,3 +46,6 @@ Pomelo running on real New 3DS hardware:
 Pomelo running in Mikage emulator:
 
 ![Pomelo running in the Mikage emulator, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_12-Jun-2026_13-55-28.png)
+
+![Pomelo running in the Mikage emulator, NDS style](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_09-Jul-2026_18-03-26.png)
+
