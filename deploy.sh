@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 echo "Building site with zola..."
-zola build --output-dir docs
+zola build --output-dir docs --force
 
 echo "Commiting and pushing"
 git add .
