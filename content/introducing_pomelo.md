@@ -17,14 +17,17 @@ Currently Pomelo is still in early development, with a lot of missing features a
 * Game Metadata - Show the name and icon of all the installed games
 * Game Launching - Launch one of the games that are installed on your console. This feature is pretty buggy, a lot of games crash very quickly or even don't boot at all.
 
+## Design
+As you can see in the screenshots below, i am still playing around with the design until i find something i like. Currently, my vibe is something retro, right now i'm trying to make it look like a NDS.
+
 ## Installation
 Pomelo is using Luma3ds to load itself instead of the stock nintendo homemenu, specifically it uses the "Game Patching" optional feature. Currently i only tested it on my console which is a New 3DS US.
 
 ## Screenshots
-Pomelo running in the Mikage emulator:
-
-![Pomelo running in the Mikage emulator, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_12-Jun-2026_13-55-28.png)
-
 Pomelo running on real New 3DS hardware:
 
 ![Pomelo running on a New 3DS console, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_09-Jul-2026_14-11-00.png)
+
+Pomelo running in Mikage emulator:
+
+![Pomelo running in the Mikage emulator, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_12-Jun-2026_13-55-28.png)
