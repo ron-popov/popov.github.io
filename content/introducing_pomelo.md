@@ -53,5 +53,5 @@ Pomelo running in Mikage emulator:
 
 ![Pomelo running in the Mikage emulator, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_12-Jun-2026_13-55-28.png)
 
-![Pomelo running in the Mikage emulator, NDS style](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_09-Jul-2026_18-03-26.png)
+![Pomelo running in the Mikage emulator, NDS style](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_09-Jul-2026_19-20-03.png)
 
