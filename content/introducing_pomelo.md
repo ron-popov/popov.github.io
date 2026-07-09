@@ -1,3 +1,8 @@
++++
+title = "Introducing Pomelo"
+date = 2026-07-09
++++
+
 # Pomelo - An Alternative 3DS Homemenu!
 
 Hi Everyone, I am happy to share a project i was working on for the last couple of months called "**Pomelo**", which is an **open-source alternative for the stock 3ds homemenu!**
