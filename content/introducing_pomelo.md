@@ -19,3 +19,12 @@ Currently Pomelo is still in early development, with a lot of missing features a
 
 ## Installation
 Pomelo is using Luma3ds to load itself instead of the stock nintendo homemenu, specifically it uses the "Game Patching" optional feature. Currently i only tested it on my console which is a New 3DS US.
+
+## Screenshots
+Pomelo running in the Mikage emulator:
+
+![Pomelo running in the Mikage emulator, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_12-Jun-2026_13-55-28.png)
+
+Pomelo running on real New 3DS hardware:
+
+![Pomelo running on a New 3DS console, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_09-Jul-2026_14-11-00.png)
