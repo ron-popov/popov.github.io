@@ -24,7 +24,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ron-popov.github.io/popov.github.io/homemenu-memory-shenanigans/">
     <meta property="og:site_name" content="">
-    <meta property="og:updated_time" content="2026-07-13T00:15:15.410611821+03:00">
+    <meta property="og:updated_time" content="2026-07-13T00:18:24.352644410+03:00">
     <meta property="article:published_time" content="2026-12-30T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
     <meta name="twitter:data2" content="5 min">
@@ -49,7 +49,7 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2026-12-30"><time datetime="2026-12-30">2026.12.30</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="897 words"><time datetime="PT5M">5 min</time> read</li>
+                    <li title="859 words"><time datetime="PT5M">5 min</time> read</li>
                 </ul>
             </header>
 
@@ -112,8 +112,7 @@ if (R_FAILED(rc))
 <p>As you can see, we have 3 svcBreak calls in this function, but how can we know which one is the relevant one?
 I used R12 as an error code register, in which i set a hardcoded value, just before the call to svcBreak. As svcBreak doesn't really change the value of the registers, that value would later show up in the register state dump i get when the console crashes.</p>
 <p>The updated code looked something like this</p>
-<pre><code data-lang="c">```c
-// Retrieve handle to the resource limit object for our process
+<pre><code data-lang="c">// Retrieve handle to the resource limit object for our process
 Handle reslimit = 0;
 rc = svcGetResourceLimit(&amp;reslimit, CUR_PROCESS_HANDLE);
 if (R_FAILED(rc)) {
@@ -138,7 +137,7 @@ if (R_FAILED(rc)) {
 	svcBreak(USERBREAK_PANIC);
 }
 </code></pre>
-<p>And now i could pinpoint the exact svc call that failed and causes the system to crash.</p>
+<p>And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value <code>0xEEEE0003</code>, which means that Pomelo fails to allocate the linear heap.</p>
 <p><img src="https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png" alt="Our Second Crash Dump" /></p>
 
         </article>

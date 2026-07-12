@@ -79,7 +79,6 @@ I used R12 as an error code register, in which i set a hardcoded value, just bef
 
 The updated code looked something like this
 ```c
-```c
 // Retrieve handle to the resource limit object for our process
 Handle reslimit = 0;
 rc = svcGetResourceLimit(&reslimit, CUR_PROCESS_HANDLE);
@@ -106,6 +105,6 @@ if (R_FAILED(rc)) {
 }
 ```
 
-And now i could pinpoint the exact svc call that failed and causes the system to crash.
+And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value `0xEEEE0003`, which means that Pomelo fails to allocate the linear heap.
 
 ![Our Second Crash Dump](https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png)
