@@ -24,10 +24,10 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ron-popov.github.io/popov.github.io/homemenu-memory-shenanigans/">
     <meta property="og:site_name" content="">
-    <meta property="og:updated_time" content="2026-07-12T23:59:05.867080933+03:00">
+    <meta property="og:updated_time" content="2026-07-13T00:15:15.410611821+03:00">
     <meta property="article:published_time" content="2026-12-30T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
-    <meta name="twitter:data2" content="3 min">
+    <meta name="twitter:data2" content="5 min">
 </head>
 
 <body class="layout-center" data-theme="terminus">
@@ -49,13 +49,13 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2026-12-30"><time datetime="2026-12-30">2026.12.30</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="600 words"><time datetime="PT3M">3 min</time> read</li>
+                    <li title="897 words"><time datetime="PT5M">5 min</time> read</li>
                 </ul>
             </header>
 
 <h1 id="3ds-system-memory-shenanigans">3DS System Memory Shenanigans</h1>
 <h2 id="why">Why?</h2>
-<p>While building Pomelo (which you can read more about in my previous blog), i noticed that some games would crash very quickly after booting - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, that caused some games to crash.</p>
+<p>While building Pomelo (which you can read more about in my previous blog), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.</p>
 <p>One such game was "Super Mario 3D World", so i decided to take this one as an example, and assumed that getting it to boot, should fix the same issues that a lot of games had.</p>
 <h2 id="how">How?</h2>
 <p>I dumped the game from my console, and put it into ghidra to try and understand why the game was crashing. I would also mention that i got a pretty detailed stack dump from my 3ds console, including the state of all the registers, and the stack.</p>
@@ -81,9 +81,65 @@ However on modded consoles, we can practically do whatever we want.</p>
 So the fix should be as simple as changing that to <code>SYSTEM</code>, right? Sadly, it's not that simple..</p>
 <h2 id="linear-heap-allocations">Linear Heap Allocations</h2>
 <p>Re-building Pomelo and running it on my modded console, i immediatly got a crash :(</p>
-<p>The crash was in the function <code>__system_allocateHeaps</code>, which is a funtcion that runs at a very early stage of the title boot, even before the <code>main</code> function is executed.
-Now, it kinda makes sense that by playing with the memory region in which the heap is allocated, we broke something related to heap allocations. Let's dig into this function and understand which specific section is crashing!</p>
+<p>The crash dump we got looked like this. As you can see we can see the state of each register, we also have the state of the stack in the bottom screen, however that is not relevant at the moment.
+The first interesting thing you can see here, is that the Exception Type is <code>svcBreak</code>, which is a syscall that has a single purpose - crash the system.
+This means that some code somewhere, reacher a state where it just couldn't continue and had no other choice, but to crash.</p>
 <p><img src="https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_12-Jul-2026_23-56-14.png" alt="Our First Crash Dump" /></p>
+<p>The PC register pointed to the <code>svcBreak</code> function, luckily we can use the LR register to see which function called <code>svcBreak</code>,
+The LR function pointed to a function called <code>__system_allocateHeaps</code>.</p>
+<p>The function <code>__system_allocateHeaps</code> is a funtcion that runs at a very early stage of the title boot, even before the <code>main</code> function is executed.
+It kinda makes sense that by playing with the memory region in which the heap is allocated, we broke something related to heap allocations. Let's dig into this function and understand which specific section is crashing!</p>
+<p>The relevant function looked something like this</p>
+<pre><code data-lang="c">// Retrieve handle to the resource limit object for our process
+Handle reslimit = 0;
+rc = svcGetResourceLimit(&amp;reslimit, CUR_PROCESS_HANDLE);
+if (R_FAILED(rc))
+	svcBreak(USERBREAK_PANIC);
+
+// Retrieve information about total/used memory + calculate how much memory we can allocate
+// ...
+
+// Allocate the application heap
+rc = svcControlMemory(&amp;__ctru_heap, OS_HEAP_AREA_BEGIN, 0x0, __ctru_heap_size, MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE);
+if (R_FAILED(rc))
+	svcBreak(USERBREAK_PANIC);
+
+// Allocate the linear heap
+rc = svcControlMemory(&amp;__ctru_linear_heap, 0x0, 0x0, __ctru_linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ | MEMPERM_WRITE);
+if (R_FAILED(rc))
+	svcBreak(USERBREAK_PANIC);
+</code></pre>
+<p>As you can see, we have 3 svcBreak calls in this function, but how can we know which one is the relevant one?
+I used R12 as an error code register, in which i set a hardcoded value, just before the call to svcBreak. As svcBreak doesn't really change the value of the registers, that value would later show up in the register state dump i get when the console crashes.</p>
+<p>The updated code looked something like this</p>
+<pre><code data-lang="c">```c
+// Retrieve handle to the resource limit object for our process
+Handle reslimit = 0;
+rc = svcGetResourceLimit(&amp;reslimit, CUR_PROCESS_HANDLE);
+if (R_FAILED(rc)) {
+	asm volatile(&quot;mov r12, %0&quot; : : &quot;r&quot;(0xEEEE0001));
+	svcBreak(USERBREAK_PANIC);
+}
+
+// Retrieve information about total/used memory + calculate how much memory we can allocate
+// ...
+
+// Allocate the application heap
+rc = svcControlMemory(&amp;__ctru_heap, OS_HEAP_AREA_BEGIN, 0x0, __ctru_heap_size, MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE);
+if (R_FAILED(rc)) {
+	asm volatile(&quot;mov r12, %0&quot; : : &quot;r&quot;(0xEEEE0002));
+	svcBreak(USERBREAK_PANIC);
+}
+
+// Allocate the linear heap
+rc = svcControlMemory(&amp;__ctru_linear_heap, 0x0, 0x0, __ctru_linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ | MEMPERM_WRITE);
+if (R_FAILED(rc)) {
+	asm volatile(&quot;mov r12, %0&quot; : : &quot;r&quot;(0xEEEE0003));
+	svcBreak(USERBREAK_PANIC);
+}
+</code></pre>
+<p>And now i could pinpoint the exact svc call that failed and causes the system to crash.</p>
+<p><img src="https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png" alt="Our Second Crash Dump" /></p>
 
         </article>
     </main>

@@ -5,7 +5,7 @@ date = 2026-12-30
 
 # 3DS System Memory Shenanigans
 ## Why?
-While building Pomelo (which you can read more about in my previous blog), i noticed that some games would crash very quickly after booting - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, that caused some games to crash.
+While building Pomelo (which you can read more about in my previous blog), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.
 
 One such game was "Super Mario 3D World", so i decided to take this one as an example, and assumed that getting it to boot, should fix the same issues that a lot of games had.
 
@@ -40,7 +40,72 @@ So the fix should be as simple as changing that to `SYSTEM`, right? Sadly, it's 
 ## Linear Heap Allocations
 Re-building Pomelo and running it on my modded console, i immediatly got a crash :(
 
-The crash was in the function `__system_allocateHeaps`, which is a funtcion that runs at a very early stage of the title boot, even before the `main` function is executed.
-Now, it kinda makes sense that by playing with the memory region in which the heap is allocated, we broke something related to heap allocations. Let's dig into this function and understand which specific section is crashing!
+The crash dump we got looked like this. As you can see we can see the state of each register, we also have the state of the stack in the bottom screen, however that is not relevant at the moment.
+The first interesting thing you can see here, is that the Exception Type is `svcBreak`, which is a syscall that has a single purpose - crash the system.
+This means that some code somewhere, reacher a state where it just couldn't continue and had no other choice, but to crash.
 
 ![Our First Crash Dump](https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_12-Jul-2026_23-56-14.png)
+
+The PC register pointed to the `svcBreak` function, luckily we can use the LR register to see which function called `svcBreak`,
+The LR function pointed to a function called `__system_allocateHeaps`.
+
+The function `__system_allocateHeaps` is a funtcion that runs at a very early stage of the title boot, even before the `main` function is executed.
+It kinda makes sense that by playing with the memory region in which the heap is allocated, we broke something related to heap allocations. Let's dig into this function and understand which specific section is crashing!
+
+The relevant function looked something like this
+```c
+// Retrieve handle to the resource limit object for our process
+Handle reslimit = 0;
+rc = svcGetResourceLimit(&reslimit, CUR_PROCESS_HANDLE);
+if (R_FAILED(rc))
+	svcBreak(USERBREAK_PANIC);
+
+// Retrieve information about total/used memory + calculate how much memory we can allocate
+// ...
+
+// Allocate the application heap
+rc = svcControlMemory(&__ctru_heap, OS_HEAP_AREA_BEGIN, 0x0, __ctru_heap_size, MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE);
+if (R_FAILED(rc))
+	svcBreak(USERBREAK_PANIC);
+
+// Allocate the linear heap
+rc = svcControlMemory(&__ctru_linear_heap, 0x0, 0x0, __ctru_linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ | MEMPERM_WRITE);
+if (R_FAILED(rc))
+	svcBreak(USERBREAK_PANIC);
+```
+
+As you can see, we have 3 svcBreak calls in this function, but how can we know which one is the relevant one?
+I used R12 as an error code register, in which i set a hardcoded value, just before the call to svcBreak. As svcBreak doesn't really change the value of the registers, that value would later show up in the register state dump i get when the console crashes.
+
+The updated code looked something like this
+```c
+```c
+// Retrieve handle to the resource limit object for our process
+Handle reslimit = 0;
+rc = svcGetResourceLimit(&reslimit, CUR_PROCESS_HANDLE);
+if (R_FAILED(rc)) {
+	asm volatile("mov r12, %0" : : "r"(0xEEEE0001));
+	svcBreak(USERBREAK_PANIC);
+}
+
+// Retrieve information about total/used memory + calculate how much memory we can allocate
+// ...
+
+// Allocate the application heap
+rc = svcControlMemory(&__ctru_heap, OS_HEAP_AREA_BEGIN, 0x0, __ctru_heap_size, MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE);
+if (R_FAILED(rc)) {
+	asm volatile("mov r12, %0" : : "r"(0xEEEE0002));
+	svcBreak(USERBREAK_PANIC);
+}
+
+// Allocate the linear heap
+rc = svcControlMemory(&__ctru_linear_heap, 0x0, 0x0, __ctru_linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ | MEMPERM_WRITE);
+if (R_FAILED(rc)) {
+	asm volatile("mov r12, %0" : : "r"(0xEEEE0003));
+	svcBreak(USERBREAK_PANIC);
+}
+```
+
+And now i could pinpoint the exact svc call that failed and causes the system to crash.
+
+![Our Second Crash Dump](https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png)
