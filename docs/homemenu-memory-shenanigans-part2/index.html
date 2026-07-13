@@ -24,7 +24,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ron-popov.github.io/popov.github.io/homemenu-memory-shenanigans-part2/">
     <meta property="og:site_name" content="">
-    <meta property="og:updated_time" content="2026-07-13T18:25:23.377680468+03:00">
+    <meta property="og:updated_time" content="2026-07-13T18:34:07.688550631+03:00">
     <meta property="article:published_time" content="2099-12-31T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
     <meta name="twitter:data2" content="1 min">
@@ -49,14 +49,21 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2099-12-31"><time datetime="2099-12-31">2099.12.31</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="18 words"><time datetime="PT1M">1 min</time> read</li>
+                    <li title="82 words"><time datetime="PT1M">1 min</time> read</li>
                 </ul>
             </header>
 
 <h1 id="3ds-system-memory-shenanigans-part-1">3DS System Memory Shenanigans - Part 1</h1>
 <h2 id="where-we-left-off">Where we left off</h2>
+<p>tl;dr</p>
+<ol>
+<li>Some games are crashing as soon as they are launched, because they don't have enough RAM</li>
+<li>I need to allocate my heaps in a differnt region of memory, dedicated for system apps, instead of the APPS memory region</li>
+<li>Pomelo fails to alloate a linear heap in the new memory region and crashes on boot.</li>
+</ol>
 <h2 id="what-is-the-linear-heap">What is the linear heap?</h2>
 <h2 id="3ds-error-codes">3ds Error Codes</h2>
+<h2 id="how-much-memory-i-have">How much memory i have?</h2>
 
         </article>
     </main>

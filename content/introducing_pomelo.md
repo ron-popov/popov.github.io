@@ -10,6 +10,8 @@ Hi Everyone, I am happy to share a project i was working on for the last couple 
 ## Why?
 When i got my first 3ds console, a couple of months ago, i wanted to customize the homemenu UI of my console. 
 I was quite surprised to see that the only customization mechanism was themes, and there was no alternative for the stock nintendo homemenu.
+
+Being in time of life where i had quite a lot of spare time, writing a homemenu for a console i know nothing about sounded like quite a cool project, that really fell in love with over time.
 I started learning about 3ds hacking and very quickly learned of a very supportive community that has TON of knowledge about anything 3ds related. Which made the entire experience a lot more fun :)
 
 My goal with this project is to build an open source alternative to the stock nintendo homemenu, that would allow the community to customize and easily redesign.
@@ -17,7 +19,9 @@ Currently Pomelo has a very limited set of features and changing the design requ
 I am hoping to implement a themes mechanism in the future, similar to the one nintendo has, but more flexible.
 
 ## Features
-Currently Pomelo is still in early development, with a lot of missing features and bugs. The features i focused on in the meantime are:
+The homemenu is a very integral part of the 3ds console, doing really, a TON of stuff behind the scenes. I don't think Pomelo would be ever be able to have the full set of features that the stock homemenu has, however i do think that it is very close to having the important features, that will allow most users to use Pomelo as a daily driver.
+
+Currently Pomelo is still in development, the features i was focusing on are:
 * Game Enumeration - Get a list of all the installed title
 * Game Metadata - Show the name and icon of all the installed games
 * Game Launching - Launch one of the games that are installed on your console. This feature is pretty buggy, a lot of games crash very quickly or even don't boot at all.
