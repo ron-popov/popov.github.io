@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>/</loc>
+        <loc>https://ronpopov.me/</loc>
     </url>
     <url>
-        <loc>/homemenu-memory-shenanigans-part1/</loc>
+        <loc>https://ronpopov.me/homemenu-memory-shenanigans-part1/</loc>
         <lastmod>2026-07-13</lastmod>
     </url>
     <url>
-        <loc>/introducing-pomelo/</loc>
+        <loc>https://ronpopov.me/introducing-pomelo/</loc>
         <lastmod>2026-07-09</lastmod>
     </url>
     <url>
-        <loc>/page/1/</loc>
+        <loc>https://ronpopov.me/page/1/</loc>
     </url>
 </urlset>
