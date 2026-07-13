@@ -70,8 +70,7 @@ It kinda makes sense that by playing with the memory region in which the heap is
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the application heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_heap&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	OS_HEAP_AREA_BEGIN, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	OS_HEAP_AREA_BEGIN,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	__ctru_heap_size, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	MEMOP_ALLOC, MEMPERM_READ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;|&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_WRITE&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
@@ -80,9 +79,9 @@ It kinda makes sense that by playing with the memory region in which the heap is
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;	svcBreak&lt;&#x2F;span&gt;&lt;span&gt;(USERBREAK_PANIC);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the linear heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_linear_heap&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_linear_heap&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	__ctru_linear_heap_size, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	MEMOP_ALLOC_LINEAR, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	MEMPERM_READ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;|&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_WRITE&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
@@ -108,8 +107,7 @@ I used R12 as an error code register, in which i set a hardcoded value, just bef
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the application heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_heap&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	OS_HEAP_AREA_BEGIN, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	OS_HEAP_AREA_BEGIN,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	__ctru_heap_size, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	MEMOP_ALLOC, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	MEMPERM_READ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;|&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_WRITE&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
@@ -123,8 +121,7 @@ I used R12 as an error code register, in which i set a hardcoded value, just bef
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the linear heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_linear_heap&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
-&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;	0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	__ctru_linear_heap_size, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	MEMOP_ALLOC_LINEAR, &lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;	MEMPERM_READ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;|&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_WRITE&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;

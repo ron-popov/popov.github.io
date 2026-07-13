@@ -66,8 +66,7 @@ if (R_FAILED(rc))
 // Allocate the application heap
 rc = svcControlMemory(
 	&__ctru_heap, 
-	OS_HEAP_AREA_BEGIN, 
-	0x0, 
+	OS_HEAP_AREA_BEGIN, 0x0, 
 	__ctru_heap_size, 
 	MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE
 );
@@ -76,9 +75,9 @@ if (R_FAILED(rc))
 	svcBreak(USERBREAK_PANIC);
 
 // Allocate the linear heap
-rc = svcControlMemory(&__ctru_linear_heap, 
-	0x0, 
-	0x0, 
+rc = svcControlMemory(
+	&__ctru_linear_heap, 
+	0x0, 0x0, 
 	__ctru_linear_heap_size, 
 	MEMOP_ALLOC_LINEAR, 
 	MEMPERM_READ | MEMPERM_WRITE
@@ -108,8 +107,7 @@ if (R_FAILED(rc)) {
 // Allocate the application heap
 rc = svcControlMemory(
 	&__ctru_heap, 
-	OS_HEAP_AREA_BEGIN, 
-	0x0, 
+	OS_HEAP_AREA_BEGIN, 0x0, 
 	__ctru_heap_size, 
 	MEMOP_ALLOC, 
 	MEMPERM_READ | MEMPERM_WRITE
@@ -123,8 +121,7 @@ if (R_FAILED(rc)) {
 // Allocate the linear heap
 rc = svcControlMemory(
 	&__ctru_linear_heap, 
-	0x0, 
-	0x0, 
+	0x0, 0x0, 
 	__ctru_linear_heap_size, 
 	MEMOP_ALLOC_LINEAR, 
 	MEMPERM_READ | MEMPERM_WRITE
