@@ -1,6 +1,6 @@
 +++
 title = "Homemenu Memory Shenanigans - Part 1"
-date = 2026-12-30
+date = 2026-07-13
 +++
 
 # 3DS System Memory Shenanigans - Part 1
@@ -37,7 +37,7 @@ MemoryType: Application
 AHA! Now everything makes sense! Becuase Pomelo is using the `APPLICATION` system region, it's using some of the memory that is reserved for actual 3ds games, and when "Super Mario 3D World" is booting, it doesn't have the amount of memory that it expected.
 So the fix should be as simple as changing that to `SYSTEM`, right? Sadly, it's not that simple..
 
-## Linear Heap Allocations
+## Something is crashing :(
 Re-building Pomelo and running it on my modded console, i immediatly got a crash :(
 
 The crash dump we got looked like this. As you can see we can see the state of each register, we also have the state of the stack in the bottom screen, however that is not relevant at the moment.
@@ -108,4 +108,3 @@ if (R_FAILED(rc)) {
 And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value `0xEEEE0003`, which means that Pomelo fails to allocate the linear heap.
 
 ![Our Second Crash Dump](https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png)
-
