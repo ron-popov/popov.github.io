@@ -1,6 +1,7 @@
 # The URL the site will be built for
 base_url = "https://ronpopov.me"
 title = "Ron Popov"
+generate_feeds = true
 
 # Whether to automatically compile all Sass files in the sass directory
 compile_sass = false
@@ -10,6 +11,9 @@ build_search_index = false
 
 # Use terminus theme
 theme = "terminus"
+
+[markdown.highlighting]
+theme = "monokai-classic"
 
 [extra]
 # Put all your custom variables here
