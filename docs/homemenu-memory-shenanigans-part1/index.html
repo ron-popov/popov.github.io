@@ -24,7 +24,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ron-popov.github.io/popov.github.io/homemenu-memory-shenanigans-part1/">
     <meta property="og:site_name" content="">
-    <meta property="og:updated_time" content="2026-07-13T18:53:58.740321704+03:00">
+    <meta property="og:updated_time" content="2026-07-13T19:05:35.265601512+03:00">
     <meta property="article:published_time" content="2026-07-13T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
     <meta name="twitter:data2" content="5 min">
@@ -49,13 +49,13 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2026-07-13"><time datetime="2026-07-13">2026.07.13</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="897 words"><time datetime="PT5M">5 min</time> read</li>
+                    <li title="891 words"><time datetime="PT5M">5 min</time> read</li>
                 </ul>
             </header>
 
 <h1 id="3ds-system-memory-shenanigans-part-1">3DS System Memory Shenanigans - Part 1</h1>
 <h2 id="why">Why?</h2>
-<p>While building Pomelo (which you can read more about in my <a rel="external" href="https://ron-popov.github.io/popov.github.io/introducing-pomelo/">previous blog</a>), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.</p>
+<p>While building Pomelo (which you can read more about in my <a rel="external" href="https://ronpopov.me/introducing-pomelo/">previous blog</a>), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.</p>
 <p>One such game was "Super Mario 3D World", so i decided to take this one as an example, and assumed that getting it to boot, should fix the same issues that a lot of games had.</p>
 <h2 id="how">How?</h2>
 <p>I dumped the game from my console, and put it into ghidra to try and understand why the game was crashing. I would also mention that i got a pretty detailed stack dump from my 3ds console, including the state of all the registers, and the stack.</p>
@@ -84,7 +84,7 @@ So the fix should be as simple as changing that to <code>SYSTEM</code>, right? S
 <p>The crash dump we got looked like this. As you can see we can see the state of each register, we also have the state of the stack in the bottom screen, however that is not relevant at the moment.
 The first interesting thing you can see here, is that the Exception Type is <code>svcBreak</code>, which is a syscall that has a single purpose - crash the system.
 This means that some code somewhere, reacher a state where it just couldn't continue and had no other choice, but to crash.</p>
-<p><img src="https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_12-Jul-2026_23-56-14.png" alt="Our First Crash Dump" /></p>
+<p><img src="https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_12-Jul-2026_23-56-14.png" alt="Our First Crash Dump" /></p>
 <p>The PC register pointed to the <code>svcBreak</code> function, luckily we can use the LR register to see which function called <code>svcBreak</code>,
 The LR function pointed to a function called <code>__system_allocateHeaps</code>.</p>
 <p>The function <code>__system_allocateHeaps</code> is a funtcion that runs at a very early stage of the title boot, even before the <code>main</code> function is executed.
@@ -138,7 +138,7 @@ if (R_FAILED(rc)) {
 }
 </code></pre>
 <p>And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value <code>0xEEEE0003</code>, which means that Pomelo fails to allocate the linear heap.</p>
-<p><img src="https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png" alt="Our Second Crash Dump" /></p>
+<p><img src="https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png" alt="Our Second Crash Dump" /></p>
 <h2 id="wrapping-up">Wrapping Up</h2>
 <p>I feel like this is already kinda long, and i have quite a lot more to cover, so i have to split this blog into (hopefuly) 2 parts :)</p>
 

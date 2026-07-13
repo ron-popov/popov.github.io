@@ -51,13 +51,13 @@ However POMELO HAS NOT BEEN THOROUGHLY TESTED, **USE AT YOUR OWN RISK**.
 ## Screenshots!
 Pomelo running on real New 3DS hardware:
 
-![Pomelo running on a New 3DS console, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_09-Jul-2026_14-11-00.png)
+![Pomelo running on a New 3DS console, showing the game grid](https://ronpopov.me/images/introducing_pomelo/screenshot_09-Jul-2026_14-11-00.png)
 
 Pomelo running in Mikage emulator:
 
-![Pomelo running in the Mikage emulator, showing the game grid](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_12-Jun-2026_13-55-28.png)
+![Pomelo running in the Mikage emulator, showing the game grid](https://ronpopov.me/images/introducing_pomelo/screenshot_12-Jun-2026_13-55-28.png)
 
-![Pomelo running in the Mikage emulator, NDS style](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_09-Jul-2026_19-20-03.png)
+![Pomelo running in the Mikage emulator, NDS style](https://ronpopov.me/images/introducing_pomelo/screenshot_09-Jul-2026_19-20-03.png)
 
-![Pomelo running in the Mikage emulator, NDS style](https://ron-popov.github.io/popov.github.io/images/introducing_pomelo/screenshot_10-Jul-2026_14-23-26.png)
+![Pomelo running in the Mikage emulator, NDS style](https://ronpopov.me/images/introducing_pomelo/screenshot_10-Jul-2026_14-23-26.png)
 

@@ -5,7 +5,7 @@ date = 2026-07-13
 
 # 3DS System Memory Shenanigans - Part 1
 ## Why?
-While building Pomelo (which you can read more about in my [previous blog](https://ron-popov.github.io/popov.github.io/introducing-pomelo/)), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.
+While building Pomelo (which you can read more about in my [previous blog](https://ronpopov.me/introducing-pomelo/)), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.
 
 One such game was "Super Mario 3D World", so i decided to take this one as an example, and assumed that getting it to boot, should fix the same issues that a lot of games had.
 
@@ -44,7 +44,7 @@ The crash dump we got looked like this. As you can see we can see the state of e
 The first interesting thing you can see here, is that the Exception Type is `svcBreak`, which is a syscall that has a single purpose - crash the system.
 This means that some code somewhere, reacher a state where it just couldn't continue and had no other choice, but to crash.
 
-![Our First Crash Dump](https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_12-Jul-2026_23-56-14.png)
+![Our First Crash Dump](https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_12-Jul-2026_23-56-14.png)
 
 The PC register pointed to the `svcBreak` function, luckily we can use the LR register to see which function called `svcBreak`,
 The LR function pointed to a function called `__system_allocateHeaps`.
@@ -107,7 +107,7 @@ if (R_FAILED(rc)) {
 
 And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value `0xEEEE0003`, which means that Pomelo fails to allocate the linear heap.
 
-![Our Second Crash Dump](https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png)
+![Our Second Crash Dump](https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png)
 
 ## Wrapping Up
 I feel like this is already kinda long, and i have quite a lot more to cover, so i have to split this blog into (hopefuly) 2 parts :)
