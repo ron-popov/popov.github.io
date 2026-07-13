@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>Ron Popov</title>
+    <link rel="self" type="application/atom+xml" href="https://ronpopov.me/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://ronpopov.me"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-13T00:00:00+00:00</updated>
+    <id>https://ronpopov.me/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Homemenu Memory Shenanigans - Part 1</title>
+        <published>2026-07-13T00:00:00+00:00</published>
+        <updated>2026-07-13T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://ronpopov.me/homemenu-memory-shenanigans-part1/"/>
+        <id>https://ronpopov.me/homemenu-memory-shenanigans-part1/</id>
+        
+        <content type="html" xml:base="https://ronpopov.me/homemenu-memory-shenanigans-part1/">&lt;h1 id=&quot;3ds-system-memory-shenanigans-part-1&quot;&gt;3DS System Memory Shenanigans - Part 1&lt;&#x2F;h1&gt;
+&lt;h2 id=&quot;why&quot;&gt;Why?&lt;&#x2F;h2&gt;
+&lt;p&gt;While building Pomelo (which you can read more about in my &lt;a rel=&quot;external&quot; href=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;introducing-pomelo&#x2F;&quot;&gt;previous blog&lt;&#x2F;a&gt;), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn&#x27;t initialize &#x2F; handle something correctly, which caused some games to crash.&lt;&#x2F;p&gt;
+&lt;p&gt;One such game was &quot;Super Mario 3D World&quot;, so i decided to take this one as an example, and assumed that getting it to boot, should fix the same issues that a lot of games had.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;how&quot;&gt;How?&lt;&#x2F;h2&gt;
+&lt;p&gt;I dumped the game from my console, and put it into ghidra to try and understand why the game was crashing. I would also mention that i got a pretty detailed stack dump from my 3ds console, including the state of all the registers, and the stack.&lt;&#x2F;p&gt;
+&lt;p&gt;I loaded the game binary into ghidra, and used the modern marvel of Artificial Intelligence to my help. I connected claude code to the ghidra MCP server, gave it the crash dump, and very quickly it gave me the answer i was looking for.
+The reason &quot;Super Mario 3D World&quot; was crashing, when the game boots, it checks how much RAM is has available for use, and if it doesn&#x27;t have enough, it crashes :(&lt;&#x2F;p&gt;
+&lt;p&gt;But in that case, how does the game boot at all? After all pomelo uses much less memory than the stock homemenu, so what is the issue?
+And that&#x27;s when i learned about 3ds FCRAM memory regions.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fcram-memory-regions&quot;&gt;FCRAM Memory Regions&lt;&#x2F;h2&gt;
+&lt;p&gt;As you can see in this super useful &lt;a rel=&quot;external&quot; href=&quot;https:&#x2F;&#x2F;raw.githubusercontent.com&#x2F;wwylele&#x2F;misc-3ds-diagram&#x2F;master&#x2F;memory.svg&quot;&gt;diagram&lt;&#x2F;a&gt;, the 3ds FCRAM is where the heaps of all the different processes in the 3ds are allocated.
+The FCRAM is split into 3 sections:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;APPLICATION - For Games and Applications running on the 3ds system, such as &quot;Mario Kart 7&quot;, &quot;Super Mario 3D World&quot; and etc...&lt;&#x2F;li&gt;
+&lt;li&gt;BASE - Used by some of the sysmodules, and also the kernel itself.&lt;&#x2F;li&gt;
+&lt;li&gt;SYSTEM - Used by the NS module, some system applets (system apps such as camera or settings menu), and most importantly &lt;strong&gt;the homemenu is using this section&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;aha&quot;&gt;AHA!&lt;&#x2F;h2&gt;
+&lt;p&gt;The memory region that the title is using, is defined by the title itself. Titles will usually use the APPLICATION system region, and since titles are signed by Nintendo, this is not something that the author of the app can change.
+However on modded consoles, we can practically do whatever we want.&lt;&#x2F;p&gt;
+&lt;p&gt;In the case of pomelo, it is using the APPLICATION memory region, as you can see defined in the &lt;code&gt;template.rsf&lt;&#x2F;code&gt; file that is used the build the CXI section&lt;&#x2F;p&gt;
+&lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;yaml&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;MemoryType&lt;&#x2F;span&gt;&lt;span&gt;:&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt; Application&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;AHA! Now everything makes sense! Becuase Pomelo is using the &lt;code&gt;APPLICATION&lt;&#x2F;code&gt; system region, it&#x27;s using some of the memory that is reserved for actual 3ds games, and when &quot;Super Mario 3D World&quot; is booting, it doesn&#x27;t have the amount of memory that it expected.
+So the fix should be as simple as changing that to &lt;code&gt;SYSTEM&lt;&#x2F;code&gt;, right? Sadly, it&#x27;s not that simple..&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;something-is-crashing&quot;&gt;Something is crashing :(&lt;&#x2F;h2&gt;
+&lt;p&gt;Re-building Pomelo and running it on my modded console, i immediatly got a crash :(&lt;&#x2F;p&gt;
+&lt;p&gt;The crash dump we got looked like this. As you can see we can see the state of each register, we also have the state of the stack in the bottom screen, however that is not relevant at the moment.
+The first interesting thing you can see here, is that the Exception Type is &lt;code&gt;svcBreak&lt;&#x2F;code&gt;, which is a syscall that has a single purpose - crash the system.
+This means that some code somewhere, reacher a state where it just couldn&#x27;t continue and had no other choice, but to crash.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;homemenu_memory_shenanigans&#x2F;screenshot_12-Jul-2026_23-56-14.png&quot; alt=&quot;Our First Crash Dump&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;The PC register pointed to the &lt;code&gt;svcBreak&lt;&#x2F;code&gt; function, luckily we can use the LR register to see which function called &lt;code&gt;svcBreak&lt;&#x2F;code&gt;,
+The LR function pointed to a function called &lt;code&gt;__system_allocateHeaps&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;The function &lt;code&gt;__system_allocateHeaps&lt;&#x2F;code&gt; is a funtcion that runs at a very early stage of the title boot, even before the &lt;code&gt;main&lt;&#x2F;code&gt; function is executed.
+It kinda makes sense that by playing with the memory region in which the heap is allocated, we broke something related to heap allocations. Let&#x27;s dig into this function and understand which specific section is crashing!&lt;&#x2F;p&gt;
+&lt;p&gt;The relevant function looked something like this&lt;&#x2F;p&gt;
+&lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;c&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Retrieve handle to the resource limit object for our process&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #66D9EF;font-style: italic;&quot;&gt;Handle&lt;&#x2F;span&gt;&lt;span&gt; reslimit &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt; 0&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcGetResourceLimit&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;reslimit&lt;&#x2F;span&gt;&lt;span&gt;, CUR_PROCESS_HANDLE);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;if&lt;&#x2F;span&gt;&lt;span&gt; (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;R_FAILED&lt;&#x2F;span&gt;&lt;span&gt;(rc))&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;	svcBreak&lt;&#x2F;span&gt;&lt;span&gt;(USERBREAK_PANIC);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Retrieve information about total&#x2F;used memory + calculate how much memory we can allocate&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; ...&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the application heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_heap&lt;&#x2F;span&gt;&lt;span&gt;, OS_HEAP_AREA_BEGIN,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, __ctru_heap_size, MEMOP_ALLOC, MEMPERM_READ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;|&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_WRITE);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;if&lt;&#x2F;span&gt;&lt;span&gt; (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;R_FAILED&lt;&#x2F;span&gt;&lt;span&gt;(rc))&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;	svcBreak&lt;&#x2F;span&gt;&lt;span&gt;(USERBREAK_PANIC);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the linear heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_linear_heap&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, __ctru_linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;|&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_WRITE);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;if&lt;&#x2F;span&gt;&lt;span&gt; (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;R_FAILED&lt;&#x2F;span&gt;&lt;span&gt;(rc))&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;	svcBreak&lt;&#x2F;span&gt;&lt;span&gt;(USERBREAK_PANIC);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;As you can see, we have 3 svcBreak calls in this function, but how can we know which one is the relevant one?
+I used R12 as an error code register, in which i set a hardcoded value, just before the call to svcBreak. As svcBreak doesn&#x27;t really change the value of the registers, that value would later show up in the register state dump i get when the console crashes.&lt;&#x2F;p&gt;
+&lt;p&gt;The updated code looked something like this&lt;&#x2F;p&gt;
+&lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;c&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Retrieve handle to the resource limit object for our process&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #66D9EF;font-style: italic;&quot;&gt;Handle&lt;&#x2F;span&gt;&lt;span&gt; reslimit &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt; 0&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcGetResourceLimit&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;reslimit&lt;&#x2F;span&gt;&lt;span&gt;, CUR_PROCESS_HANDLE);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;if&lt;&#x2F;span&gt;&lt;span&gt; (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;R_FAILED&lt;&#x2F;span&gt;&lt;span&gt;(rc)) {&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #66D9EF;font-style: italic;&quot;&gt;	asm&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; volatile&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;mov r12, %0&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; : :&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt; &amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;r&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;EEEE0001&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;	svcBreak&lt;&#x2F;span&gt;&lt;span&gt;(USERBREAK_PANIC);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Retrieve information about total&#x2F;used memory + calculate how much memory we can allocate&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; ...&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the application heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_heap&lt;&#x2F;span&gt;&lt;span&gt;, OS_HEAP_AREA_BEGIN,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, __ctru_heap_size, MEMOP_ALLOC, MEMPERM_READ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;|&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_WRITE);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;if&lt;&#x2F;span&gt;&lt;span&gt; (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;R_FAILED&lt;&#x2F;span&gt;&lt;span&gt;(rc)) {&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #66D9EF;font-style: italic;&quot;&gt;	asm&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; volatile&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;mov r12, %0&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; : :&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt; &amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;r&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;EEEE0002&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;	svcBreak&lt;&#x2F;span&gt;&lt;span&gt;(USERBREAK_PANIC);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the linear heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;rc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt; svcControlMemory&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span style=&quot;color: #FD971F;font-style: italic;&quot;&gt;__ctru_linear_heap&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; 0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;, __ctru_linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;|&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_WRITE);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;if&lt;&#x2F;span&gt;&lt;span&gt; (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;R_FAILED&lt;&#x2F;span&gt;&lt;span&gt;(rc)) {&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #66D9EF;font-style: italic;&quot;&gt;	asm&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt; volatile&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;mov r12, %0&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt; : :&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt; &amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;r&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;0x&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;EEEE0003&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;	svcBreak&lt;&#x2F;span&gt;&lt;span&gt;(USERBREAK_PANIC);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value &lt;code&gt;0xEEEE0003&lt;&#x2F;code&gt;, which means that Pomelo fails to allocate the linear heap.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;homemenu_memory_shenanigans&#x2F;screenshot_13-Jul-2026_00-12-04.png&quot; alt=&quot;Our Second Crash Dump&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wrapping-up&quot;&gt;Wrapping Up&lt;&#x2F;h2&gt;
+&lt;p&gt;I feel like this is already kinda long, and i have quite a lot more to cover, so i have to split this blog into (hopefuly) 2 parts :)&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Introducing Pomelo</title>
+        <published>2026-07-09T00:00:00+00:00</published>
+        <updated>2026-07-09T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://ronpopov.me/introducing-pomelo/"/>
+        <id>https://ronpopov.me/introducing-pomelo/</id>
+        
+        <content type="html" xml:base="https://ronpopov.me/introducing-pomelo/">&lt;h1 id=&quot;pomelo-an-alternative-3ds-homemenu&quot;&gt;Pomelo - An Alternative 3DS Homemenu!&lt;&#x2F;h1&gt;
+&lt;p&gt;Hi Everyone, I am happy to share a project i was working on for the last couple of months called &quot;&lt;strong&gt;Pomelo&lt;&#x2F;strong&gt;&quot;, which is an &lt;strong&gt;open-source alternative for the stock 3ds homemenu!&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why&quot;&gt;Why?&lt;&#x2F;h2&gt;
+&lt;p&gt;When i got my first 3ds console, a couple of months ago, i wanted to customize the homemenu UI of my console.
+I was quite surprised to see that the only customization mechanism was themes, and there was no alternative for the stock nintendo homemenu.&lt;&#x2F;p&gt;
+&lt;p&gt;Being in time of life where i had quite a lot of spare time, writing a homemenu for a console i know nothing about sounded like quite a cool project, that really fell in love with over time.
+I started learning about 3ds hacking and very quickly learned of a very supportive community that has TON of knowledge about anything 3ds related. Which made the entire experience a lot more fun :)&lt;&#x2F;p&gt;
+&lt;p&gt;My goal with this project is to build an open source alternative to the stock nintendo homemenu, that would allow the community to customize and easily redesign.
+Currently Pomelo has a very limited set of features and changing the design requires writing C code :(
+I am hoping to implement a themes mechanism in the future, similar to the one nintendo has, but more flexible.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;features&quot;&gt;Features&lt;&#x2F;h2&gt;
+&lt;p&gt;The homemenu is a very integral part of the 3ds console, doing really, a TON of stuff behind the scenes. I don&#x27;t think Pomelo would be ever be able to have the full set of features that the stock homemenu has, however i do think that it is very close to having the important features, that will allow most users to use Pomelo as a daily driver.&lt;&#x2F;p&gt;
+&lt;p&gt;Currently Pomelo is still in development, the features i was focusing on are:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Game Enumeration - Get a list of all the installed title&lt;&#x2F;li&gt;
+&lt;li&gt;Game Metadata - Show the name and icon of all the installed games&lt;&#x2F;li&gt;
+&lt;li&gt;Game Launching - Launch one of the games that are installed on your console. This feature is pretty buggy, a lot of games crash very quickly or even don&#x27;t boot at all.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;design&quot;&gt;Design&lt;&#x2F;h2&gt;
+&lt;p&gt;As you can see in the screenshots below, i am still playing around with the design until i find something i like.
+Currently, my vibe is something retro, right now i&#x27;m trying to make it look like a NDS.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;plans-for-the-future&quot;&gt;Plans for the future&lt;&#x2F;h2&gt;
+&lt;p&gt;First of all i want to focus on improving the Game Launching part, i understand this is one of the most important features of the 3ds homemenu.
+I want to get Pomelo to a state where users can actually use this as their daily driver. And then start with all the random QoL improvements.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;installation&quot;&gt;Installation&lt;&#x2F;h2&gt;
+&lt;p&gt;Pomelo is using Luma3ds &quot;Game Patching&quot; to replace the stock nintendo homemenu, note that &quot;Game Patching&quot; is optional feature, that has to be enabled. Currently i only tested it on my console which is a New 3DS US.
+Currently the project is still in &lt;strong&gt;very early development&lt;&#x2F;strong&gt;, the source code is available for those who wish to run it on their own consoles.&lt;&#x2F;p&gt;
+&lt;p&gt;For more details on installation, see the &lt;a rel=&quot;external&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;ron-popov&#x2F;3ds-Pomelo&quot;&gt;Github Repo&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;feedback&quot;&gt;Feedback&lt;&#x2F;h2&gt;
+&lt;p&gt;I would love to hear your feedback and thoughts on this project, however, please note that this is a side project of mine and i am working on it in my spare time, so please be patient &amp;lt;3&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;testing&quot;&gt;Testing&lt;&#x2F;h2&gt;
+&lt;p&gt;Pomelo is using Luma3ds Game Patching to load itself, instead of the stock homemenu, incase something goes wrong, simply remove the Pomelo &lt;code&gt;code.bin&lt;&#x2F;code&gt; and &lt;code&gt;exheader.bin&lt;&#x2F;code&gt; files from the SDCard and the stock homemenu should boot as normal.
+However POMELO HAS NOT BEEN THOROUGHLY TESTED, &lt;strong&gt;USE AT YOUR OWN RISK&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;screenshots&quot;&gt;Screenshots!&lt;&#x2F;h2&gt;
+&lt;p&gt;Pomelo running on real New 3DS hardware:&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;&#x2F;images&#x2F;introducing_pomelo&#x2F;screenshot_09-Jul-2026_14-11-00.png&quot; alt=&quot;Pomelo running on a New 3DS console, showing the game grid&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;Pomelo running in Mikage emulator:&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;&#x2F;images&#x2F;introducing_pomelo&#x2F;screenshot_12-Jun-2026_13-55-28.png&quot; alt=&quot;Pomelo running in the Mikage emulator, showing the game grid&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;introducing_pomelo&#x2F;screenshot_09-Jul-2026_19-20-03.png&quot; alt=&quot;Pomelo running in the Mikage emulator, NDS style&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;introducing_pomelo&#x2F;screenshot_10-Jul-2026_14-23-26.png&quot; alt=&quot;Pomelo running in the Mikage emulator, NDS style&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>
