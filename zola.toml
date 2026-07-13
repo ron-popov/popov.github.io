@@ -12,3 +12,4 @@ theme = "terminus"
 
 [extra]
 # Put all your custom variables here
+title = "Ron Popov"

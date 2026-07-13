@@ -1,6 +1,6 @@
 +++
 title = "WIP: Homemenu Memory Shenanigans - Part 2"
-date = 2099-12-31
+date = 2026-07-15
 draft = true
 +++
 
