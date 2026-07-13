@@ -3,6 +3,8 @@
 echo "Building site with zola..."
 zola build --output-dir docs --force
 
+echo "ronpopov.me" > docs/CNAME
+
 echo "Commiting and pushing"
 git add .
 git commit -m "Deploy site $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
