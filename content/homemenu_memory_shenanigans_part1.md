@@ -5,7 +5,7 @@ date = 2026-07-13
 
 # 3DS System Memory Shenanigans - Part 1
 ## Why?
-While building Pomelo (which you can read more about in my previous blog), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.
+While building Pomelo (which you can read more about in my [previous blog](https://ron-popov.github.io/popov.github.io/introducing-pomelo/)), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.
 
 One such game was "Super Mario 3D World", so i decided to take this one as an example, and assumed that getting it to boot, should fix the same issues that a lot of games had.
 
