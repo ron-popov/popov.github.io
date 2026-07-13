@@ -1,5 +1,6 @@
 # The URL the site will be built for
 base_url = "https://ronpopov.me"
+title = "Ron Popov"
 
 # Whether to automatically compile all Sass files in the sass directory
 compile_sass = false
@@ -12,4 +13,3 @@ theme = "terminus"
 
 [extra]
 # Put all your custom variables here
-title = "Ron Popov"
