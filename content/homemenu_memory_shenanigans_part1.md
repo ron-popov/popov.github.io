@@ -108,3 +108,6 @@ if (R_FAILED(rc)) {
 And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value `0xEEEE0003`, which means that Pomelo fails to allocate the linear heap.
 
 ![Our Second Crash Dump](https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png)
+
+## Wrapping
+I feel like this is already kinda long, stay tuned for part 2 :)
