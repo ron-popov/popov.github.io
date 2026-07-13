@@ -25,7 +25,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ronpopov.me/homemenu-memory-shenanigans-part1/">
     <meta property="og:site_name" content="Ron Popov">
-    <meta property="og:updated_time" content="2026-07-13T20:22:37.068316393+03:00">
+    <meta property="og:updated_time" content="2026-07-13T20:23:16.085044110+03:00">
     <meta property="article:published_time" content="2026-07-13T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
     <meta name="twitter:data2" content="5 min">
@@ -50,21 +50,20 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2026-07-13"><time datetime="2026-07-13">2026.07.13</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="891 words"><time datetime="PT5M">5 min</time> read</li>
+                    <li title="885 words"><time datetime="PT5M">5 min</time> read</li>
                 </ul>
             </header>
 
-<h1 id="3ds-system-memory-shenanigans-part-1">3DS System Memory Shenanigans - Part 1</h1>
-<h2 id="why">Why?</h2>
+<h1 id="why">Why?</h1>
 <p>While building Pomelo (which you can read more about in my <a rel="external" href="https://ronpopov.me/introducing-pomelo/">previous blog</a>), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.</p>
 <p>One such game was "Super Mario 3D World", so i decided to take this one as an example, and assumed that getting it to boot, should fix the same issues that a lot of games had.</p>
-<h2 id="how">How?</h2>
+<h1 id="how">How?</h1>
 <p>I dumped the game from my console, and put it into ghidra to try and understand why the game was crashing. I would also mention that i got a pretty detailed stack dump from my 3ds console, including the state of all the registers, and the stack.</p>
 <p>I loaded the game binary into ghidra, and used the modern marvel of Artificial Intelligence to my help. I connected claude code to the ghidra MCP server, gave it the crash dump, and very quickly it gave me the answer i was looking for.
 The reason "Super Mario 3D World" was crashing, when the game boots, it checks how much RAM is has available for use, and if it doesn't have enough, it crashes :(</p>
 <p>But in that case, how does the game boot at all? After all pomelo uses much less memory than the stock homemenu, so what is the issue?
 And that's when i learned about 3ds FCRAM memory regions.</p>
-<h2 id="fcram-memory-regions">FCRAM Memory Regions</h2>
+<h1 id="fcram-memory-regions">FCRAM Memory Regions</h1>
 <p>As you can see in this super useful <a rel="external" href="https://raw.githubusercontent.com/wwylele/misc-3ds-diagram/master/memory.svg">diagram</a>, the 3ds FCRAM is where the heaps of all the different processes in the 3ds are allocated.
 The FCRAM is split into 3 sections:</p>
 <ul>
@@ -72,14 +71,14 @@ The FCRAM is split into 3 sections:</p>
 <li>BASE - Used by some of the sysmodules, and also the kernel itself.</li>
 <li>SYSTEM - Used by the NS module, some system applets (system apps such as camera or settings menu), and most importantly <strong>the homemenu is using this section</strong></li>
 </ul>
-<h2 id="aha">AHA!</h2>
+<h1 id="aha">AHA!</h1>
 <p>The memory region that the title is using, is defined by the title itself. Titles will usually use the APPLICATION system region, and since titles are signed by Nintendo, this is not something that the author of the app can change.
 However on modded consoles, we can practically do whatever we want.</p>
 <p>In the case of pomelo, it is using the APPLICATION memory region, as you can see defined in the <code>template.rsf</code> file that is used the build the CXI section</p>
 <pre class="giallo" style="color: #F8F8F2; background-color: #272822;"><code data-lang="yaml"><span class="giallo-l"><span style="color: #F92672;">MemoryType</span><span>:</span><span style="color: #E6DB74;"> Application</span></span></code></pre>
 <p>AHA! Now everything makes sense! Becuase Pomelo is using the <code>APPLICATION</code> system region, it's using some of the memory that is reserved for actual 3ds games, and when "Super Mario 3D World" is booting, it doesn't have the amount of memory that it expected.
 So the fix should be as simple as changing that to <code>SYSTEM</code>, right? Sadly, it's not that simple..</p>
-<h2 id="something-is-crashing">Something is crashing :(</h2>
+<h1 id="something-is-crashing">Something is crashing :(</h1>
 <p>Re-building Pomelo and running it on my modded console, i immediatly got a crash :(</p>
 <p>The crash dump we got looked like this. As you can see we can see the state of each register, we also have the state of the stack in the bottom screen, however that is not relevant at the moment.
 The first interesting thing you can see here, is that the Exception Type is <code>svcBreak</code>, which is a syscall that has a single purpose - crash the system.
@@ -169,7 +168,7 @@ I used R12 as an error code register, in which i set a hardcoded value, just bef
 <span class="giallo-l"><span>}</span></span></code></pre>
 <p>And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value <code>0xEEEE0003</code>, which means that Pomelo fails to allocate the linear heap.</p>
 <p><img src="https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png" alt="Our Second Crash Dump" /></p>
-<h2 id="wrapping-up">Wrapping Up</h2>
+<h1 id="wrapping-up">Wrapping Up</h1>
 <p>I feel like this is already kinda long, and i have quite a lot more to cover, so i have to split this blog into (hopefuly) 2 parts :)</p>
 
         </article>
