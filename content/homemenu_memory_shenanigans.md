@@ -1,9 +1,9 @@
 +++
-title = "Homemenu Memory Shenanigans"
+title = "Homemenu Memory Shenanigans - Part 1"
 date = 2026-12-30
 +++
 
-# 3DS System Memory Shenanigans
+# 3DS System Memory Shenanigans - Part 1
 ## Why?
 While building Pomelo (which you can read more about in my previous blog), i noticed that some games that pomelo tried to boot, would crash very quickly after they started - usually the more serious ones such as the mario and legend of zelda series. I assumed that i didn't initialize / handle something correctly, which caused some games to crash.
 
@@ -108,3 +108,4 @@ if (R_FAILED(rc)) {
 And now i could pinpoint the exact svc call that failed and causes the system to crash! After running the code on my console, R12 had the value `0xEEEE0003`, which means that Pomelo fails to allocate the linear heap.
 
 ![Our Second Crash Dump](https://ron-popov.github.io/popov.github.io/images/homemenu_memory_shenanigans/screenshot_13-Jul-2026_00-12-04.png)
+
