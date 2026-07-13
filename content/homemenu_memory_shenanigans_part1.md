@@ -60,16 +60,31 @@ rc = svcGetResourceLimit(&reslimit, CUR_PROCESS_HANDLE);
 if (R_FAILED(rc))
 	svcBreak(USERBREAK_PANIC);
 
-// Retrieve information about total/used memory + calculate how much memory we can allocate
+// Retrieve information about total/used memory
+// and calculate how much memory we can allocate
 // ...
 
 // Allocate the application heap
-rc = svcControlMemory(&__ctru_heap, OS_HEAP_AREA_BEGIN, 0x0, __ctru_heap_size, MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE);
+rc = svcControlMemory(
+	&__ctru_heap, 
+	OS_HEAP_AREA_BEGIN, 
+	0x0, 
+	__ctru_heap_size, 
+	MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE
+);
+
 if (R_FAILED(rc))
 	svcBreak(USERBREAK_PANIC);
 
 // Allocate the linear heap
-rc = svcControlMemory(&__ctru_linear_heap, 0x0, 0x0, __ctru_linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ | MEMPERM_WRITE);
+rc = svcControlMemory(&__ctru_linear_heap, 
+	0x0, 
+	0x0, 
+	__ctru_linear_heap_size, 
+	MEMOP_ALLOC_LINEAR, 
+	MEMPERM_READ | MEMPERM_WRITE
+);
+
 if (R_FAILED(rc))
 	svcBreak(USERBREAK_PANIC);
 ```
@@ -87,18 +102,35 @@ if (R_FAILED(rc)) {
 	svcBreak(USERBREAK_PANIC);
 }
 
-// Retrieve information about total/used memory + calculate how much memory we can allocate
+// Retrieve information about total/used memory
+// and calculate how much memory we can allocate
 // ...
 
 // Allocate the application heap
-rc = svcControlMemory(&__ctru_heap, OS_HEAP_AREA_BEGIN, 0x0, __ctru_heap_size, MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE);
+rc = svcControlMemory(
+	&__ctru_heap, 
+	OS_HEAP_AREA_BEGIN, 
+	0x0, 
+	__ctru_heap_size, 
+	MEMOP_ALLOC, 
+	MEMPERM_READ | MEMPERM_WRITE
+);
+
 if (R_FAILED(rc)) {
 	asm volatile("mov r12, %0" : : "r"(0xEEEE0002));
 	svcBreak(USERBREAK_PANIC);
 }
 
 // Allocate the linear heap
-rc = svcControlMemory(&__ctru_linear_heap, 0x0, 0x0, __ctru_linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ | MEMPERM_WRITE);
+rc = svcControlMemory(
+	&__ctru_linear_heap, 
+	0x0, 
+	0x0, 
+	__ctru_linear_heap_size, 
+	MEMOP_ALLOC_LINEAR, 
+	MEMPERM_READ | MEMPERM_WRITE
+);
+
 if (R_FAILED(rc)) {
 	asm volatile("mov r12, %0" : : "r"(0xEEEE0003));
 	svcBreak(USERBREAK_PANIC);
