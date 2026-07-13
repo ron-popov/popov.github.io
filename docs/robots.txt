@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 Allow: /
-Sitemap: https://ron-popov.github.io/popov.github.io/sitemap.xml
+Sitemap: ./sitemap.xml
