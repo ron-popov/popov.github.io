@@ -1,6 +1,6 @@
 +++
 title = "WIP: Homemenu Memory Shenanigans - Part 2"
-date = 2026-12-30
+date = 2099-12-31
 +++
 
 # 3DS System Memory Shenanigans - Part 1
