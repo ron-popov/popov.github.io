@@ -98,3 +98,11 @@ From here i could extract the total size that is requested for the linear heap f
 How does that make sense??? That's more than what we request in mikage, and i can't even get 4MB allocated, oof :(
 
 I then also patched the instruction after the call to `svcControlMemory` to make sure the call succeeded, and it did.
+
+# Temp Summary
+So what did we have here?
+* The real homemenu is allocating 11MB when running in mikage
+* It allocates 13MB when running on real hardware
+* I can't allocate 4MB in the same memory region :(
+
+More in the next one!

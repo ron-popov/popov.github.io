@@ -95,6 +95,14 @@ That means that instead of calling &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt
 &lt;p&gt;From here i could extract the total size that is requested for the linear heap from R4 - 0x00D00000, which is 13MB???
 How does that make sense??? That&#x27;s more than what we request in mikage, and i can&#x27;t even get 4MB allocated, oof :(&lt;&#x2F;p&gt;
 &lt;p&gt;I then also patched the instruction after the call to &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; to make sure the call succeeded, and it did.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;temp-summary&quot;&gt;Temp Summary&lt;&#x2F;h1&gt;
+&lt;p&gt;So what did we have here?&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;The real homemenu is allocating 11MB when running in mikage&lt;&#x2F;li&gt;
+&lt;li&gt;It allocates 13MB when running on real hardware&lt;&#x2F;li&gt;
+&lt;li&gt;I can&#x27;t allocate 4MB in the same memory region :(&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;More in the next one!&lt;&#x2F;p&gt;
 </content>
         
     </entry>
