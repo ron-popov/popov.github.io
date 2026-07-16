@@ -4,12 +4,12 @@
     <link rel="self" type="application/atom+xml" href="https://ronpopov.me/atom.xml"/>
     <link rel="alternate" type="text/html" href="https://ronpopov.me"/>
     <generator uri="https://www.getzola.org/">Zola</generator>
-    <updated>2026-07-15T00:00:00+00:00</updated>
+    <updated>2026-07-16T00:00:00+00:00</updated>
     <id>https://ronpopov.me/atom.xml</id>
     <entry xml:lang="en">
         <title>WIP: Homemenu Memory Shenanigans - Part 2</title>
-        <published>2026-07-15T00:00:00+00:00</published>
-        <updated>2026-07-15T00:00:00+00:00</updated>
+        <published>2026-07-16T00:00:00+00:00</published>
+        <updated>2026-07-16T00:00:00+00:00</updated>
         
         <author>
           <name>
@@ -81,11 +81,19 @@ I tried to reverse engineer the real homemenu and attemp to find how much linear
 &lt;p&gt;I dumped the &lt;code&gt;code.bin&lt;&#x2F;code&gt; file from the stock homemenu to disassemble it and get it&#x27;s logic, as i said i found the linear heap &lt;code&gt;svcContolMemory&lt;&#x2F;code&gt; call, but i couldn&#x27;t find what is the value that is being passed to it, it seems like it is never initialized.
 So i decided to do the following, &lt;strong&gt;i patched the function call to &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; with &lt;code&gt;int 0x3C&lt;&#x2F;code&gt;, or in human language - &lt;code&gt;svcBreak&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;.
 That means that instead of calling &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt;, the console will crash, and show me the registers and stack state when the call to &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; was supposed to take place, from which i could extract the different variables that are passed to it, including how much memory is requested.&lt;&#x2F;p&gt;
+&lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;plain&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;...&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;00146dac 00 20 a0 e3     mov        r2,#0x0&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;00146db0 08 00 8d e2     add        currentSize,sp,#0x8&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;00146db4 24 fb ff eb     bl         ctr::svcControlMemory &amp;lt;-- replace this opcode with &amp;quot;int 0x3C&amp;quot;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;00146db8 02 11 10 e2     ands       svcResult,currentSize,#0x80000000&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;00146dbc 00 f0 20 e3     nop&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;...&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;So i patched the homemenu code.bin file, and used Luma3ds game patching to tell my console to use the patched code.bin file instead of the original homemenu, booted it up, aaaannnnnnddddddd
 &lt;strong&gt;I got this beautiful crash screen :)&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
 &lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;homemenu_memory_shenanigans&#x2F;screenshot_16-Jul-2026_16-28-13.png&quot; alt=&quot;Crash Dump&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
 &lt;p&gt;From here i could extract the total size that is requested for the linear heap from R4 - 0x00D00000, which is 13MB???
 How does that make sense??? That&#x27;s more than what we request in mikage, and i can&#x27;t even get 4MB allocated, oof :(&lt;&#x2F;p&gt;
+&lt;p&gt;I then also patched the instruction after the call to &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; to make sure the call succeeded, and it did.&lt;&#x2F;p&gt;
 </content>
         
     </entry>

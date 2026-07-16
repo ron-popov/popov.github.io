@@ -1,6 +1,6 @@
 +++
 title = "WIP: Homemenu Memory Shenanigans - Part 2"
-date = 2026-07-15
+date = 2026-07-16
 draft = false
 +++
 
@@ -78,6 +78,16 @@ I dumped the `code.bin` file from the stock homemenu to disassemble it and get i
 So i decided to do the following, **i patched the function call to `svcControlMemory` with `int 0x3C`, or in human language - `svcBreak`**.
 That means that instead of calling `svcControlMemory`, the console will crash, and show me the registers and stack state when the call to `svcControlMemory` was supposed to take place, from which i could extract the different variables that are passed to it, including how much memory is requested.
 
+```
+...
+00146dac 00 20 a0 e3     mov        r2,#0x0
+00146db0 08 00 8d e2     add        currentSize,sp,#0x8
+00146db4 24 fb ff eb     bl         ctr::svcControlMemory <-- replace this opcode with "int 0x3C"
+00146db8 02 11 10 e2     ands       svcResult,currentSize,#0x80000000
+00146dbc 00 f0 20 e3     nop
+...
+```
+
 So i patched the homemenu code.bin file, and used Luma3ds game patching to tell my console to use the patched code.bin file instead of the original homemenu, booted it up, aaaannnnnnddddddd
 **I got this beautiful crash screen :)**
 
@@ -85,3 +95,5 @@ So i patched the homemenu code.bin file, and used Luma3ds game patching to tell 
 
 From here i could extract the total size that is requested for the linear heap from R4 - 0x00D00000, which is 13MB???
 How does that make sense??? That's more than what we request in mikage, and i can't even get 4MB allocated, oof :(
+
+I then also patched the instruction after the call to `svcControlMemory` to make sure the call succeeded, and it did.
