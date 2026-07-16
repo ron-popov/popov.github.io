@@ -33,22 +33,22 @@ In the case of pomelo, it is using the APPLICATION memory region, as you can see
 MemoryType: Application
 ```
 
-AHA! Now everything makes sense! Becuase Pomelo is using the `APPLICATION` system region, it's using some of the memory that is reserved for actual 3ds games, and when "Super Mario 3D World" is booting, it doesn't have the amount of memory that it expected.
+AHA! Now everything makes sense! Because Pomelo is using the `APPLICATION` system region, it's using some of the memory that is reserved for actual 3ds games, and when "Super Mario 3D World" is booting, it doesn't have the amount of memory that it expected.
 So the fix should be as simple as changing that to `SYSTEM`, right? Sadly, it's not that simple..
 
 # Something is crashing :(
-Re-building Pomelo and running it on my modded console, i immediatly got a crash :(
+Re-building Pomelo and running it on my modded console, i immediately got a crash :(
 
 The crash dump we got looked like this. As you can see we can see the state of each register, we also have the state of the stack in the bottom screen, however that is not relevant at the moment.
 The first interesting thing you can see here, is that the Exception Type is `svcBreak`, which is a syscall that has a single purpose - crash the system.
-This means that some code somewhere, reacher a state where it just couldn't continue and had no other choice, but to crash.
+This means that some code somewhere, reached a state where it just couldn't continue and had no other choice, but to crash.
 
 ![Our First Crash Dump](https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_12-Jul-2026_23-56-14.png)
 
 The PC register pointed to the `svcBreak` function, luckily we can use the LR register to see which function called `svcBreak`,
 The LR function pointed to a function called `__system_allocateHeaps`.
 
-The function `__system_allocateHeaps` is a funtcion that runs at a very early stage of the title boot, even before the `main` function is executed.
+The function `__system_allocateHeaps` is a function that runs at a very early stage of the title boot, even before the `main` function is executed.
 It kinda makes sense that by playing with the memory region in which the heap is allocated, we broke something related to heap allocations. Let's dig into this function and understand which specific section is crashing!
 
 The relevant function looked something like this

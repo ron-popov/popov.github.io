@@ -25,7 +25,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ronpopov.me/homemenu-memory-shenanigans-part2/">
     <meta property="og:site_name" content="Ron Popov">
-    <meta property="og:updated_time" content="2026-07-16T17:43:13.140377118+03:00">
+    <meta property="og:updated_time" content="2026-07-16T18:31:33.326410525+03:00">
     <meta property="article:published_time" content="2026-07-16T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
     <meta name="twitter:data2" content="5 min">
@@ -59,11 +59,11 @@
 <p>tl;dr</p>
 <ol>
 <li>Some games are crashing as soon as they are launched, because they don't have enough RAM</li>
-<li>I need to allocate my heaps in a differnt region of memory, dedicated for system apps, instead of the APPS memory region</li>
-<li>Pomelo fails to alloate a linear heap in the new memory region and crashes on boot :(</li>
+<li>I need to allocate my heaps in a different region of memory, dedicated for system apps, instead of the APPLICATION memory region</li>
+<li>Pomelo fails to allocate a linear heap in the new memory region and crashes on boot :(</li>
 </ol>
 <h1 id="what-is-the-linear-heap">What is the linear heap?</h1>
-<p>Linear is a heap that is used for GFX operations, such as storing textures and 3d models. The only thing that is special about is it that it's a single consecutive section in memory, unlike a regular heap allocation. In regular heaps the memory might be spread out across multiple sections in the physical memory.</p>
+<p>Linear is a heap that is used for GFX operations, such as storing textures and 3d models. The only thing that is special about it is that it's a single consecutive section in memory, unlike a regular heap allocation. In regular heaps the memory might be spread out across multiple sections in the physical memory.</p>
 <h1 id="3ds-error-codes">3ds Error Codes</h1>
 <p>Using the same technique that i used to pinpoint the exact svcBreak call that crashes the system, i can use it to also leak the returnCode from the <code>svcControlMemory</code> (syscall that is used to allocate memory on the 3ds console). Now the code looks like this</p>
 <pre class="giallo" style="color: #F8F8F2; background-color: #272822;"><code data-lang="c"><span class="giallo-l"><span style="color: #88846F;">// Allocate the linear heap</span></span>
@@ -81,7 +81,7 @@
 <span class="giallo-l"><span style="color: #A6E22E;">	svcBreak</span><span>(USERBREAK_PANIC);</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre>
 <p><img src="https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_16-Jul-2026_15-17-46.png" alt="Crash Dump" /></p>
-<p>You can see in R11 that the error code <code>svcControMemory</code> returns is <code>0xD86007F3</code>!
+<p>You can see in R11 that the error code <code>svcControlMemory</code> returns is <code>0xD86007F3</code>!
 Something you should know about 3ds status code is that they are actually built from 4 different values that can be used to debug the crash:</p>
 <ul>
 <li>Description</li>
@@ -101,17 +101,17 @@ I am requesting the same amount of memory that the real homemenu is requesting. 
 <span class="giallo-l"></span>
 <span class="giallo-l"><span># Linear heap allocation - Around 11MB</span></span>
 <span class="giallo-l"><span>SVCControlMemory: addr0=0x00000000, addr1=0x00000000, size=0xb64000, op=0x10003, perm=0x3</span></span></code></pre>
-<p>Claude suggested the reason the linear heap allocation fails is because a linear heap requries a continous section of memory, let's see how much memory i have available and if that makes sense
+<p>Claude suggested the reason the linear heap allocation fails is because a linear heap requires a continuous section of memory, let's see how much memory i have available and if that makes sense
 Well, i have quite a lot of memory...
 Overall the system has around 255mb of ram, with 248mb available, however we are more interested specifically in the SYSTEM memory region, as only there we can allocate memory.
-This regios has around 100mb of ram, with 95mb of ram available for allocation, so how could that be???</p>
+This region has around 100mb of ram, with 95mb of ram available for allocation, so how could that be???</p>
 <h1 id="how-much-memory-does-the-real-homemenu-allocate">How much memory does the real homemenu allocate?</h1>
 <p>When running the real homemenu in mikage it told me that the real homemenu is requesting around 11mb of linear heap memory, however when i request 11mb of linear heap memory using pomelo on real hardware, it crashes.
-I assume there some diff between the way the homemenu does that on a real console and in mikage, and it's not farfetched that the console allocated more / less memory, based on the 3ds model (some models have more RAM than others).
-I tried to reverse engineer the real homemenu and attemp to find how much linear heap it requests and i couldn't find anything, so i really wanted to get this value somehow from the real hardware.</p>
+I assume there's some diff between the way the homemenu does that on a real console and in mikage, and it's not farfetched that the console allocated more / less memory, based on the 3ds model (some models have more RAM than others).
+I tried to reverse engineer the real homemenu and attempt to find how much linear heap it requests and i couldn't find anything, so i really wanted to get this value somehow from the real hardware.</p>
 <p>Now, getting those numbers is a bit hard, we want to capture the homemenu performing a syscall (which is handled by the kernel). Even tho there are debuggers for physical consoles, i'm not really sure how i could go for debugging the homemenu or the kernel itself.</p>
 <p>I didn't really want to invest in using, or maybe even building something like this for a super specific use case (getting the amount of ram that the real homemenu is requesting). So i decided to do something super hacky, that worked!</p>
-<p>I dumped the <code>code.bin</code> file from the stock homemenu to disassemble it and get it's logic, as i said i found the linear heap <code>svcContolMemory</code> call, but i couldn't find what is the value that is being passed to it, it seems like it is never initialized.
+<p>I dumped the <code>code.bin</code> file from the stock homemenu to disassemble it and get its logic, as i said i found the linear heap <code>svcControlMemory</code> call, but i couldn't find what is the value that is being passed to it, it seems like it is never initialized.
 So i decided to do the following, <strong>i patched the function call to <code>svcControlMemory</code> with <code>int 0x3C</code>, or in human language - <code>svcBreak</code></strong>.
 That means that instead of calling <code>svcControlMemory</code>, the console will crash, and show me the registers and stack state when the call to <code>svcControlMemory</code> was supposed to take place, from which i could extract the different variables that are passed to it, including how much memory is requested.</p>
 <pre class="giallo" style="color: #F8F8F2; background-color: #272822;"><code data-lang="plain"><span class="giallo-l"><span>...</span></span>

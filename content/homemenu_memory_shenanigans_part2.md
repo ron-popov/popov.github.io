@@ -9,11 +9,11 @@ draft = false
 
 tl;dr
 1. Some games are crashing as soon as they are launched, because they don't have enough RAM
-2. I need to allocate my heaps in a differnt region of memory, dedicated for system apps, instead of the APPS memory region
-3. Pomelo fails to alloate a linear heap in the new memory region and crashes on boot :(
+2. I need to allocate my heaps in a different region of memory, dedicated for system apps, instead of the APPLICATION memory region
+3. Pomelo fails to allocate a linear heap in the new memory region and crashes on boot :(
 
 # What is the linear heap?
-Linear is a heap that is used for GFX operations, such as storing textures and 3d models. The only thing that is special about is it that it's a single consecutive section in memory, unlike a regular heap allocation. In regular heaps the memory might be spread out across multiple sections in the physical memory.
+Linear is a heap that is used for GFX operations, such as storing textures and 3d models. The only thing that is special about it is that it's a single consecutive section in memory, unlike a regular heap allocation. In regular heaps the memory might be spread out across multiple sections in the physical memory.
 
 # 3ds Error Codes
 Using the same technique that i used to pinpoint the exact svcBreak call that crashes the system, i can use it to also leak the returnCode from the `svcControlMemory` (syscall that is used to allocate memory on the 3ds console). Now the code looks like this
@@ -35,7 +35,7 @@ if (R_FAILED(rc)) {
 ```
 ![Crash Dump](https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_16-Jul-2026_15-17-46.png)
 
-You can see in R11 that the error code `svcControMemory` returns is `0xD86007F3`!
+You can see in R11 that the error code `svcControlMemory` returns is `0xD86007F3`!
 Something you should know about 3ds status code is that they are actually built from 4 different values that can be used to debug the crash:
 * Description
 * Module
@@ -61,21 +61,21 @@ SVCControlMemory: addr0=0x08000000, addr1=0x00000000, size=0x304000, op=0x3, per
 SVCControlMemory: addr0=0x00000000, addr1=0x00000000, size=0xb64000, op=0x10003, perm=0x3
 ```
 
-Claude suggested the reason the linear heap allocation fails is because a linear heap requries a continous section of memory, let's see how much memory i have available and if that makes sense
+Claude suggested the reason the linear heap allocation fails is because a linear heap requires a continuous section of memory, let's see how much memory i have available and if that makes sense
 Well, i have quite a lot of memory...
 Overall the system has around 255mb of ram, with 248mb available, however we are more interested specifically in the SYSTEM memory region, as only there we can allocate memory.
-This regios has around 100mb of ram, with 95mb of ram available for allocation, so how could that be???
+This region has around 100mb of ram, with 95mb of ram available for allocation, so how could that be???
 
 # How much memory does the real homemenu allocate?
 When running the real homemenu in mikage it told me that the real homemenu is requesting around 11mb of linear heap memory, however when i request 11mb of linear heap memory using pomelo on real hardware, it crashes.
-I assume there some diff between the way the homemenu does that on a real console and in mikage, and it's not farfetched that the console allocated more / less memory, based on the 3ds model (some models have more RAM than others).
-I tried to reverse engineer the real homemenu and attemp to find how much linear heap it requests and i couldn't find anything, so i really wanted to get this value somehow from the real hardware.
+I assume there's some diff between the way the homemenu does that on a real console and in mikage, and it's not farfetched that the console allocated more / less memory, based on the 3ds model (some models have more RAM than others).
+I tried to reverse engineer the real homemenu and attempt to find how much linear heap it requests and i couldn't find anything, so i really wanted to get this value somehow from the real hardware.
 
 Now, getting those numbers is a bit hard, we want to capture the homemenu performing a syscall (which is handled by the kernel). Even tho there are debuggers for physical consoles, i'm not really sure how i could go for debugging the homemenu or the kernel itself.
 
 I didn't really want to invest in using, or maybe even building something like this for a super specific use case (getting the amount of ram that the real homemenu is requesting). So i decided to do something super hacky, that worked!
 
-I dumped the `code.bin` file from the stock homemenu to disassemble it and get it's logic, as i said i found the linear heap `svcContolMemory` call, but i couldn't find what is the value that is being passed to it, it seems like it is never initialized.
+I dumped the `code.bin` file from the stock homemenu to disassemble it and get its logic, as i said i found the linear heap `svcControlMemory` call, but i couldn't find what is the value that is being passed to it, it seems like it is never initialized.
 So i decided to do the following, **i patched the function call to `svcControlMemory` with `int 0x3C`, or in human language - `svcBreak`**.
 That means that instead of calling `svcControlMemory`, the console will crash, and show me the registers and stack state when the call to `svcControlMemory` was supposed to take place, from which i could extract the different variables that are passed to it, including how much memory is requested.
 

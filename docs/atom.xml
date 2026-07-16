@@ -27,11 +27,11 @@
 &lt;p&gt;tl;dr&lt;&#x2F;p&gt;
 &lt;ol&gt;
 &lt;li&gt;Some games are crashing as soon as they are launched, because they don&#x27;t have enough RAM&lt;&#x2F;li&gt;
-&lt;li&gt;I need to allocate my heaps in a differnt region of memory, dedicated for system apps, instead of the APPS memory region&lt;&#x2F;li&gt;
-&lt;li&gt;Pomelo fails to alloate a linear heap in the new memory region and crashes on boot :(&lt;&#x2F;li&gt;
+&lt;li&gt;I need to allocate my heaps in a different region of memory, dedicated for system apps, instead of the APPLICATION memory region&lt;&#x2F;li&gt;
+&lt;li&gt;Pomelo fails to allocate a linear heap in the new memory region and crashes on boot :(&lt;&#x2F;li&gt;
 &lt;&#x2F;ol&gt;
 &lt;h1 id=&quot;what-is-the-linear-heap&quot;&gt;What is the linear heap?&lt;&#x2F;h1&gt;
-&lt;p&gt;Linear is a heap that is used for GFX operations, such as storing textures and 3d models. The only thing that is special about is it that it&#x27;s a single consecutive section in memory, unlike a regular heap allocation. In regular heaps the memory might be spread out across multiple sections in the physical memory.&lt;&#x2F;p&gt;
+&lt;p&gt;Linear is a heap that is used for GFX operations, such as storing textures and 3d models. The only thing that is special about it is that it&#x27;s a single consecutive section in memory, unlike a regular heap allocation. In regular heaps the memory might be spread out across multiple sections in the physical memory.&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;3ds-error-codes&quot;&gt;3ds Error Codes&lt;&#x2F;h1&gt;
 &lt;p&gt;Using the same technique that i used to pinpoint the exact svcBreak call that crashes the system, i can use it to also leak the returnCode from the &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; (syscall that is used to allocate memory on the 3ds console). Now the code looks like this&lt;&#x2F;p&gt;
 &lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;c&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Allocate the linear heap&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
@@ -49,7 +49,7 @@
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;	svcBreak&lt;&#x2F;span&gt;&lt;span&gt;(USERBREAK_PANIC);&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;homemenu_memory_shenanigans&#x2F;screenshot_16-Jul-2026_15-17-46.png&quot; alt=&quot;Crash Dump&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
-&lt;p&gt;You can see in R11 that the error code &lt;code&gt;svcControMemory&lt;&#x2F;code&gt; returns is &lt;code&gt;0xD86007F3&lt;&#x2F;code&gt;!
+&lt;p&gt;You can see in R11 that the error code &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; returns is &lt;code&gt;0xD86007F3&lt;&#x2F;code&gt;!
 Something you should know about 3ds status code is that they are actually built from 4 different values that can be used to debug the crash:&lt;&#x2F;p&gt;
 &lt;ul&gt;
 &lt;li&gt;Description&lt;&#x2F;li&gt;
@@ -69,17 +69,17 @@ I am requesting the same amount of memory that the real homemenu is requesting. 
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;# Linear heap allocation - Around 11MB&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
 &lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;SVCControlMemory: addr0=0x00000000, addr1=0x00000000, size=0xb64000, op=0x10003, perm=0x3&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;Claude suggested the reason the linear heap allocation fails is because a linear heap requries a continous section of memory, let&#x27;s see how much memory i have available and if that makes sense
+&lt;p&gt;Claude suggested the reason the linear heap allocation fails is because a linear heap requires a continuous section of memory, let&#x27;s see how much memory i have available and if that makes sense
 Well, i have quite a lot of memory...
 Overall the system has around 255mb of ram, with 248mb available, however we are more interested specifically in the SYSTEM memory region, as only there we can allocate memory.
-This regios has around 100mb of ram, with 95mb of ram available for allocation, so how could that be???&lt;&#x2F;p&gt;
+This region has around 100mb of ram, with 95mb of ram available for allocation, so how could that be???&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;how-much-memory-does-the-real-homemenu-allocate&quot;&gt;How much memory does the real homemenu allocate?&lt;&#x2F;h1&gt;
 &lt;p&gt;When running the real homemenu in mikage it told me that the real homemenu is requesting around 11mb of linear heap memory, however when i request 11mb of linear heap memory using pomelo on real hardware, it crashes.
-I assume there some diff between the way the homemenu does that on a real console and in mikage, and it&#x27;s not farfetched that the console allocated more &#x2F; less memory, based on the 3ds model (some models have more RAM than others).
-I tried to reverse engineer the real homemenu and attemp to find how much linear heap it requests and i couldn&#x27;t find anything, so i really wanted to get this value somehow from the real hardware.&lt;&#x2F;p&gt;
+I assume there&#x27;s some diff between the way the homemenu does that on a real console and in mikage, and it&#x27;s not farfetched that the console allocated more &#x2F; less memory, based on the 3ds model (some models have more RAM than others).
+I tried to reverse engineer the real homemenu and attempt to find how much linear heap it requests and i couldn&#x27;t find anything, so i really wanted to get this value somehow from the real hardware.&lt;&#x2F;p&gt;
 &lt;p&gt;Now, getting those numbers is a bit hard, we want to capture the homemenu performing a syscall (which is handled by the kernel). Even tho there are debuggers for physical consoles, i&#x27;m not really sure how i could go for debugging the homemenu or the kernel itself.&lt;&#x2F;p&gt;
 &lt;p&gt;I didn&#x27;t really want to invest in using, or maybe even building something like this for a super specific use case (getting the amount of ram that the real homemenu is requesting). So i decided to do something super hacky, that worked!&lt;&#x2F;p&gt;
-&lt;p&gt;I dumped the &lt;code&gt;code.bin&lt;&#x2F;code&gt; file from the stock homemenu to disassemble it and get it&#x27;s logic, as i said i found the linear heap &lt;code&gt;svcContolMemory&lt;&#x2F;code&gt; call, but i couldn&#x27;t find what is the value that is being passed to it, it seems like it is never initialized.
+&lt;p&gt;I dumped the &lt;code&gt;code.bin&lt;&#x2F;code&gt; file from the stock homemenu to disassemble it and get its logic, as i said i found the linear heap &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; call, but i couldn&#x27;t find what is the value that is being passed to it, it seems like it is never initialized.
 So i decided to do the following, &lt;strong&gt;i patched the function call to &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; with &lt;code&gt;int 0x3C&lt;&#x2F;code&gt;, or in human language - &lt;code&gt;svcBreak&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;.
 That means that instead of calling &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt;, the console will crash, and show me the registers and stack state when the call to &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; was supposed to take place, from which i could extract the different variables that are passed to it, including how much memory is requested.&lt;&#x2F;p&gt;
 &lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;plain&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;...&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
@@ -144,17 +144,17 @@ The FCRAM is split into 3 sections:&lt;&#x2F;p&gt;
 However on modded consoles, we can practically do whatever we want.&lt;&#x2F;p&gt;
 &lt;p&gt;In the case of pomelo, it is using the APPLICATION memory region, as you can see defined in the &lt;code&gt;template.rsf&lt;&#x2F;code&gt; file that is used the build the CXI section&lt;&#x2F;p&gt;
 &lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;yaml&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;MemoryType&lt;&#x2F;span&gt;&lt;span&gt;:&lt;&#x2F;span&gt;&lt;span style=&quot;color: #E6DB74;&quot;&gt; Application&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;AHA! Now everything makes sense! Becuase Pomelo is using the &lt;code&gt;APPLICATION&lt;&#x2F;code&gt; system region, it&#x27;s using some of the memory that is reserved for actual 3ds games, and when &quot;Super Mario 3D World&quot; is booting, it doesn&#x27;t have the amount of memory that it expected.
+&lt;p&gt;AHA! Now everything makes sense! Because Pomelo is using the &lt;code&gt;APPLICATION&lt;&#x2F;code&gt; system region, it&#x27;s using some of the memory that is reserved for actual 3ds games, and when &quot;Super Mario 3D World&quot; is booting, it doesn&#x27;t have the amount of memory that it expected.
 So the fix should be as simple as changing that to &lt;code&gt;SYSTEM&lt;&#x2F;code&gt;, right? Sadly, it&#x27;s not that simple..&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;something-is-crashing&quot;&gt;Something is crashing :(&lt;&#x2F;h1&gt;
-&lt;p&gt;Re-building Pomelo and running it on my modded console, i immediatly got a crash :(&lt;&#x2F;p&gt;
+&lt;p&gt;Re-building Pomelo and running it on my modded console, i immediately got a crash :(&lt;&#x2F;p&gt;
 &lt;p&gt;The crash dump we got looked like this. As you can see we can see the state of each register, we also have the state of the stack in the bottom screen, however that is not relevant at the moment.
 The first interesting thing you can see here, is that the Exception Type is &lt;code&gt;svcBreak&lt;&#x2F;code&gt;, which is a syscall that has a single purpose - crash the system.
-This means that some code somewhere, reacher a state where it just couldn&#x27;t continue and had no other choice, but to crash.&lt;&#x2F;p&gt;
+This means that some code somewhere, reached a state where it just couldn&#x27;t continue and had no other choice, but to crash.&lt;&#x2F;p&gt;
 &lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;homemenu_memory_shenanigans&#x2F;screenshot_12-Jul-2026_23-56-14.png&quot; alt=&quot;Our First Crash Dump&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
 &lt;p&gt;The PC register pointed to the &lt;code&gt;svcBreak&lt;&#x2F;code&gt; function, luckily we can use the LR register to see which function called &lt;code&gt;svcBreak&lt;&#x2F;code&gt;,
 The LR function pointed to a function called &lt;code&gt;__system_allocateHeaps&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
-&lt;p&gt;The function &lt;code&gt;__system_allocateHeaps&lt;&#x2F;code&gt; is a funtcion that runs at a very early stage of the title boot, even before the &lt;code&gt;main&lt;&#x2F;code&gt; function is executed.
+&lt;p&gt;The function &lt;code&gt;__system_allocateHeaps&lt;&#x2F;code&gt; is a function that runs at a very early stage of the title boot, even before the &lt;code&gt;main&lt;&#x2F;code&gt; function is executed.
 It kinda makes sense that by playing with the memory region in which the heap is allocated, we broke something related to heap allocations. Let&#x27;s dig into this function and understand which specific section is crashing!&lt;&#x2F;p&gt;
 &lt;p&gt;The relevant function looked something like this&lt;&#x2F;p&gt;
 &lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;c&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #88846F;&quot;&gt;&#x2F;&#x2F; Retrieve handle to the resource limit object for our process&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
@@ -259,16 +259,16 @@ I used R12 as an error code register, in which i set a hardcoded value, just bef
 &lt;h2 id=&quot;why&quot;&gt;Why?&lt;&#x2F;h2&gt;
 &lt;p&gt;When i got my first 3ds console, a couple of months ago, i wanted to customize the homemenu UI of my console.
 I was quite surprised to see that the only customization mechanism was themes, and there was no alternative for the stock nintendo homemenu.&lt;&#x2F;p&gt;
-&lt;p&gt;Being in time of life where i had quite a lot of spare time, writing a homemenu for a console i know nothing about sounded like quite a cool project, that really fell in love with over time.
+&lt;p&gt;Being in a time of my life where i had quite a lot of spare time, writing a homemenu for a console i know nothing about sounded like quite a cool project, that i really fell in love with over time.
 I started learning about 3ds hacking and very quickly learned of a very supportive community that has TON of knowledge about anything 3ds related. Which made the entire experience a lot more fun :)&lt;&#x2F;p&gt;
 &lt;p&gt;My goal with this project is to build an open source alternative to the stock nintendo homemenu, that would allow the community to customize and easily redesign.
 Currently Pomelo has a very limited set of features and changing the design requires writing C code :(
 I am hoping to implement a themes mechanism in the future, similar to the one nintendo has, but more flexible.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;features&quot;&gt;Features&lt;&#x2F;h2&gt;
-&lt;p&gt;The homemenu is a very integral part of the 3ds console, doing really, a TON of stuff behind the scenes. I don&#x27;t think Pomelo would be ever be able to have the full set of features that the stock homemenu has, however i do think that it is very close to having the important features, that will allow most users to use Pomelo as a daily driver.&lt;&#x2F;p&gt;
+&lt;p&gt;The homemenu is a very integral part of the 3ds console, doing really, a TON of stuff behind the scenes. I don&#x27;t think Pomelo would ever be able to have the full set of features that the stock homemenu has, however i do think that it is very close to having the important features, that will allow most users to use Pomelo as a daily driver.&lt;&#x2F;p&gt;
 &lt;p&gt;Currently Pomelo is still in development, the features i was focusing on are:&lt;&#x2F;p&gt;
 &lt;ul&gt;
-&lt;li&gt;Game Enumeration - Get a list of all the installed title&lt;&#x2F;li&gt;
+&lt;li&gt;Game Enumeration - Get a list of all the installed titles&lt;&#x2F;li&gt;
 &lt;li&gt;Game Metadata - Show the name and icon of all the installed games&lt;&#x2F;li&gt;
 &lt;li&gt;Game Launching - Launch one of the games that are installed on your console. This feature is pretty buggy, a lot of games crash very quickly or even don&#x27;t boot at all.&lt;&#x2F;li&gt;
 &lt;&#x2F;ul&gt;
@@ -279,13 +279,13 @@ Currently, my vibe is something retro, right now i&#x27;m trying to make it look
 &lt;p&gt;First of all i want to focus on improving the Game Launching part, i understand this is one of the most important features of the 3ds homemenu.
 I want to get Pomelo to a state where users can actually use this as their daily driver. And then start with all the random QoL improvements.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;installation&quot;&gt;Installation&lt;&#x2F;h2&gt;
-&lt;p&gt;Pomelo is using Luma3ds &quot;Game Patching&quot; to replace the stock nintendo homemenu, note that &quot;Game Patching&quot; is optional feature, that has to be enabled. Currently i only tested it on my console which is a New 3DS US.
+&lt;p&gt;Pomelo is using Luma3ds &quot;Game Patching&quot; to replace the stock nintendo homemenu, note that &quot;Game Patching&quot; is an optional feature, that has to be enabled. Currently i only tested it on my console which is a New 3DS US.
 Currently the project is still in &lt;strong&gt;very early development&lt;&#x2F;strong&gt;, the source code is available for those who wish to run it on their own consoles.&lt;&#x2F;p&gt;
 &lt;p&gt;For more details on installation, see the &lt;a rel=&quot;external&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;ron-popov&#x2F;3ds-Pomelo&quot;&gt;Github Repo&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;feedback&quot;&gt;Feedback&lt;&#x2F;h2&gt;
 &lt;p&gt;I would love to hear your feedback and thoughts on this project, however, please note that this is a side project of mine and i am working on it in my spare time, so please be patient &amp;lt;3&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;testing&quot;&gt;Testing&lt;&#x2F;h2&gt;
-&lt;p&gt;Pomelo is using Luma3ds Game Patching to load itself, instead of the stock homemenu, incase something goes wrong, simply remove the Pomelo &lt;code&gt;code.bin&lt;&#x2F;code&gt; and &lt;code&gt;exheader.bin&lt;&#x2F;code&gt; files from the SDCard and the stock homemenu should boot as normal.
+&lt;p&gt;Pomelo is using Luma3ds Game Patching to load itself, instead of the stock homemenu, in case something goes wrong, simply remove the Pomelo &lt;code&gt;code.bin&lt;&#x2F;code&gt; and &lt;code&gt;exheader.bin&lt;&#x2F;code&gt; files from the SDCard and the stock homemenu should boot as normal.
 However POMELO HAS NOT BEEN THOROUGHLY TESTED, &lt;strong&gt;USE AT YOUR OWN RISK&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;screenshots&quot;&gt;Screenshots!&lt;&#x2F;h2&gt;
 &lt;p&gt;Pomelo running on real New 3DS hardware:&lt;&#x2F;p&gt;
