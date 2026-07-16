@@ -67,7 +67,8 @@ Overall the system has around 255mb of ram, with 248mb available, however we are
 This regios has around 100mb of ram, with 95mb of ram available for allocation, so how could that be???
 
 # How much memory does the real homemenu allocate?
-When running the real homemenu in mikage it told me that the real homemenu is requesting around 11mb of linear heap memory, however when i request 11mb of linear heap memory using pomelo on real hardware, it crashes, which means there is some diff between us.
+When running the real homemenu in mikage it told me that the real homemenu is requesting around 11mb of linear heap memory, however when i request 11mb of linear heap memory using pomelo on real hardware, it crashes.
+I assume there some diff between the way the homemenu does that on a real console and in mikage, and it's not farfetched that the console allocated more / less memory, based on the 3ds model (some models have more RAM than others).
 I tried to reverse engineer the real homemenu and attemp to find how much linear heap it requests and i couldn't find anything, so i really wanted to get this value somehow from the real hardware.
 
 Now, getting those numbers is a bit hard, we want to capture the homemenu performing a syscall (which is handled by the kernel). Even tho there are debuggers for physical consoles, i'm not really sure how i could go for debugging the homemenu or the kernel itself.
