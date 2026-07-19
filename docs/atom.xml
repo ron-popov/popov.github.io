@@ -4,8 +4,85 @@
     <link rel="self" type="application/atom+xml" href="https://ronpopov.me/atom.xml"/>
     <link rel="alternate" type="text/html" href="https://ronpopov.me"/>
     <generator uri="https://www.getzola.org/">Zola</generator>
-    <updated>2026-07-16T00:00:00+00:00</updated>
+    <updated>2026-07-20T00:00:00+00:00</updated>
     <id>https://ronpopov.me/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Homemenu Memory Shenanigans - Part 3 - Finalle!</title>
+        <published>2026-07-20T00:00:00+00:00</published>
+        <updated>2026-07-20T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://ronpopov.me/homemenu-memory-shenanigans-part3/"/>
+        <id>https://ronpopov.me/homemenu-memory-shenanigans-part3/</id>
+        
+        <content type="html" xml:base="https://ronpopov.me/homemenu-memory-shenanigans-part3/">&lt;h1 id=&quot;where-we-left-off&quot;&gt;Where we left off&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;a rel=&quot;external&quot; href=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;homemenu-memory-shenanigans-part1&#x2F;&quot;&gt;If you missed the first part&lt;&#x2F;a&gt;
+&lt;a rel=&quot;external&quot; href=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;homemenu-memory-shenanigans-part2&#x2F;&quot;&gt;If you missed the second part&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;tl;dr&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;I wanted to know how much memory the real homemenu is requesting &lt;strong&gt;on real hardware&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;I patched the relevant svcControlMemory call to crash instead, which would dump the stack and register values - that contain the args passed to svcControlMemory, including size and etc...&lt;&#x2F;li&gt;
+&lt;li&gt;The real homemenu is requesting ~13MB of linear heap, i can&#x27;t even allocate 4MB&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h1 id=&quot;external-guidance&quot;&gt;External Guidance&lt;&#x2F;h1&gt;
+&lt;p&gt;I asked about my issue in a couple of forums, and @neobrain (one of the authors of mikage), suggested something interesting.&lt;&#x2F;p&gt;
+&lt;p&gt;At this point in time i wasn&#x27;t sure if my issue was the &lt;strong&gt;program state&lt;&#x2F;strong&gt;, or the &lt;strong&gt;program settings&lt;&#x2F;strong&gt;, i will explain.&lt;&#x2F;p&gt;
+&lt;p&gt;When i say program state, i mean that i might have to setup the 3ds state in a different way to be able to allocate the linear heap. Maybe call some other IPC call, change the order of the IPC calls that i am performing, or something of that sort.&lt;&#x2F;p&gt;
+&lt;p&gt;Or it could be an issue with the &lt;strong&gt;program settings&lt;&#x2F;strong&gt;, aka, the headers of the homemenu that i am building. So @neobrain suggested i do an experiment to check if the issue is with the program itself, or maybe the headers.&lt;&#x2F;p&gt;
+&lt;p&gt;To explain that, we need to talk a bit about exheaders!&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;exheaders&quot;&gt;ExHeaders&lt;&#x2F;h3&gt;
+&lt;p&gt;Most 3ds titles are packaged into CXI files, also known as NCCH files.
+Those files contains multiple important pieces, but we will focus on 2 of them.&lt;&#x2F;p&gt;
+&lt;p&gt;The first of which is the &lt;code&gt;code.bin&lt;&#x2F;code&gt; file, this is the executable itself. It&#x27;s a file that contains the compiled instructions without any wrapper format (ELF or PE) at all, simply compiled instructions.&lt;&#x2F;p&gt;
+&lt;p&gt;The second interesting piece are the ExHeaders, these headers are signed by nintendo, and contain everything the 3ds system needs to know about the title to execute it. It contains a wide range of details such as:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Section Sizes - the size of the TEXT section, BSS section and etc...&lt;&#x2F;li&gt;
+&lt;li&gt;IPC &amp;amp; Syscall Access - to which services can i perform IPC calls? which syscalls can i call?&lt;&#x2F;li&gt;
+&lt;li&gt;FCRAM Memory Region - in which region we would allocate your requested memory? This is the field i changed in the first part&lt;&#x2F;li&gt;
+&lt;li&gt;A lot more random stuff - TitleId, Title Dependencies, FS Access...&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;the-experiment&quot;&gt;The Experiment&lt;&#x2F;h1&gt;
+&lt;p&gt;Let&#x27;s build a code.bin file that 1 thing exactly, allocate a linear heap using svcControlMemory. Then run that code using the real homemenu exheaders, and using pomelo exheaders. That should tell us if the issue is in the code or in the exheaders.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;code-snippet&quot;&gt;Code snippet&lt;&#x2F;h2&gt;
+&lt;p&gt;I ran the following code that does 3 things:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Call &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; and tells it to allocate a 4MB linear heap&lt;&#x2F;li&gt;
+&lt;li&gt;Copy the return code to R12&lt;&#x2F;li&gt;
+&lt;li&gt;Crash the system using &lt;code&gt;svcBreak&lt;&#x2F;code&gt;, so we could read the return code&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;asm&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;.arm&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;.global _start&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color: #66D9EF;&quot;&gt;equ&lt;&#x2F;span&gt;&lt;span&gt; MEMOP_ALLOC_LINEAR, &lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0x10003&lt;&#x2F;span&gt;&lt;span&gt;   @ MEMOP_LINEAR (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0x10000&lt;&#x2F;span&gt;&lt;span&gt;) | MEMOP_ALLOC (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;3&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color: #66D9EF;&quot;&gt;equ&lt;&#x2F;span&gt;&lt;span&gt; MEMPERM_RW,         &lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0x3&lt;&#x2F;span&gt;&lt;span&gt;       @ MEMPERM_READ (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;) | MEMPERM_WRITE (&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;.&lt;&#x2F;span&gt;&lt;span style=&quot;color: #66D9EF;&quot;&gt;equ&lt;&#x2F;span&gt;&lt;span&gt; ALLOC_SIZE,         &lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0x400000&lt;&#x2F;span&gt;&lt;span&gt;  @ &lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;4&lt;&#x2F;span&gt;&lt;span&gt; MB&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #A6E22E;&quot;&gt;_start:&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;    ldr r0, =MEMOP_ALLOC_LINEAR @ op&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;    mov&lt;&#x2F;span&gt;&lt;span&gt; r1, #&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;                  @ addr0&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;    mov&lt;&#x2F;span&gt;&lt;span&gt; r2, #&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;                  @ addr1&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;    ldr r3, =ALLOC_SIZE         @ size&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;    ldr r4, =MEMPERM_RW         @ perm&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;    svc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0x01&lt;&#x2F;span&gt;&lt;span&gt;                    @ svcControlMemory&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;    mov&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt; r12&lt;&#x2F;span&gt;&lt;span&gt;, r0                 @ stash result code where the crash screen shows it&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span style=&quot;color: #F92672;&quot;&gt;    mov&lt;&#x2F;span&gt;&lt;span&gt; r0, #&lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;                  @ breakReason = BREAKREASON_PANIC&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;    svc &lt;&#x2F;span&gt;&lt;span style=&quot;color: #AE81FF;&quot;&gt;0x3C&lt;&#x2F;span&gt;&lt;span&gt;                    @ svcBreak&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;&lt;h2 id=&quot;results&quot;&gt;Results&lt;&#x2F;h2&gt;
+&lt;p&gt;I ran the code using the original homemenu exheaders, and using pomelo exheaders, and here is what i got&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;original-homemenu-exheaders&quot;&gt;Original Homemenu ExHeaders&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;homemenu_memory_shenanigans&#x2F;screenshot_19-Jul-2026_17-01-58.png&quot; alt=&quot;Original Homemenu ExHeaders&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;pomelo-exheaders&quot;&gt;Pomelo ExHeaders&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;homemenu_memory_shenanigans&#x2F;screenshot_19-Jul-2026_17-01-52.png&quot; alt=&quot;Pomelo ExHeaders&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
     <entry xml:lang="en">
         <title>Homemenu Memory Shenanigans - Part 2</title>
         <published>2026-07-16T00:00:00+00:00</published>

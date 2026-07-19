@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src-attr 'unsafe-inline'">
+
+    <title>Homemenu Memory Shenanigans - Part 3 - Finalle! | Ron Popov</title>
+
+    <link rel="preload" href="https://ronpopov.me/fonts/FiraCode-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="https://ronpopov.me/fonts/FiraCode-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://ronpopov.me/css/style.css?h=6d2221c78b109beb6d13">
+    <script src="https://ronpopov.me/js/auto-close-popover-on-resize.js?h=4ef87d6fc7b98b22e044" defer></script>
+    <script src="https://ronpopov.me/js/copy-code-to-clipboard.js?h=6eec6d5a29e934c1de32" defer></script>
+
+    <link rel="canonical" href="https://ronpopov.me/homemenu-memory-shenanigans-part3/">
+    <link rel="alternate" type="application/atom+xml" href="https://ronpopov.me/atom.xml" title="Ron Popov">
+    
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#211f1a">
+    <meta name="color-scheme" content="dark">
+
+    <meta property="og:title" content="Homemenu Memory Shenanigans - Part 3 - Finalle!">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://ronpopov.me/homemenu-memory-shenanigans-part3/">
+    <meta property="og:site_name" content="Ron Popov">
+    <meta property="og:updated_time" content="2026-07-19T17:04:22.316437829+03:00">
+    <meta property="article:published_time" content="2026-07-20T00:00:00+00:00">
+    <meta name="twitter:label2" content="Reading time">
+    <meta name="twitter:data2" content="3 min">
+</head>
+
+<body class="layout-center" data-theme="terminus">
+    <header class="header">
+        <div class="header-container">
+            <span class="header-logo-container">
+                <a href="https://ronpopov.me">
+                    <span class="logo">Ron Popov</span>
+                </a>
+            </span>
+        </div>
+    </header>
+    <main id="main">
+        <article class="post content">
+            <header>
+                <h1 class="post-title">
+                    <a href="https://ronpopov.me/homemenu-memory-shenanigans-part3/">Homemenu Memory Shenanigans - Part 3 - Finalle!</a>
+                </h1>
+                <ul class="post-meta hidden">
+                    <li title="Published on 2026-07-20"><time datetime="2026-07-20">2026.07.20</time></li>
+                    <li role="separator" aria-hidden="true">::</li>
+                    <li title="530 words"><time datetime="PT3M">3 min</time> read</li>
+                </ul>
+            </header>
+
+<h1 id="where-we-left-off">Where we left off</h1>
+<p><a rel="external" href="https://ronpopov.me/homemenu-memory-shenanigans-part1/">If you missed the first part</a>
+<a rel="external" href="https://ronpopov.me/homemenu-memory-shenanigans-part2/">If you missed the second part</a></p>
+<p>tl;dr</p>
+<ol>
+<li>I wanted to know how much memory the real homemenu is requesting <strong>on real hardware</strong></li>
+<li>I patched the relevant svcControlMemory call to crash instead, which would dump the stack and register values - that contain the args passed to svcControlMemory, including size and etc...</li>
+<li>The real homemenu is requesting ~13MB of linear heap, i can't even allocate 4MB</li>
+</ol>
+<h1 id="external-guidance">External Guidance</h1>
+<p>I asked about my issue in a couple of forums, and @neobrain (one of the authors of mikage), suggested something interesting.</p>
+<p>At this point in time i wasn't sure if my issue was the <strong>program state</strong>, or the <strong>program settings</strong>, i will explain.</p>
+<p>When i say program state, i mean that i might have to setup the 3ds state in a different way to be able to allocate the linear heap. Maybe call some other IPC call, change the order of the IPC calls that i am performing, or something of that sort.</p>
+<p>Or it could be an issue with the <strong>program settings</strong>, aka, the headers of the homemenu that i am building. So @neobrain suggested i do an experiment to check if the issue is with the program itself, or maybe the headers.</p>
+<p>To explain that, we need to talk a bit about exheaders!</p>
+<h3 id="exheaders">ExHeaders</h3>
+<p>Most 3ds titles are packaged into CXI files, also known as NCCH files.
+Those files contains multiple important pieces, but we will focus on 2 of them.</p>
+<p>The first of which is the <code>code.bin</code> file, this is the executable itself. It's a file that contains the compiled instructions without any wrapper format (ELF or PE) at all, simply compiled instructions.</p>
+<p>The second interesting piece are the ExHeaders, these headers are signed by nintendo, and contain everything the 3ds system needs to know about the title to execute it. It contains a wide range of details such as:</p>
+<ul>
+<li>Section Sizes - the size of the TEXT section, BSS section and etc...</li>
+<li>IPC &amp; Syscall Access - to which services can i perform IPC calls? which syscalls can i call?</li>
+<li>FCRAM Memory Region - in which region we would allocate your requested memory? This is the field i changed in the first part</li>
+<li>A lot more random stuff - TitleId, Title Dependencies, FS Access...</li>
+</ul>
+<h1 id="the-experiment">The Experiment</h1>
+<p>Let's build a code.bin file that 1 thing exactly, allocate a linear heap using svcControlMemory. Then run that code using the real homemenu exheaders, and using pomelo exheaders. That should tell us if the issue is in the code or in the exheaders.</p>
+<h2 id="code-snippet">Code snippet</h2>
+<p>I ran the following code that does 3 things:</p>
+<ul>
+<li>Call <code>svcControlMemory</code> and tells it to allocate a 4MB linear heap</li>
+<li>Copy the return code to R12</li>
+<li>Crash the system using <code>svcBreak</code>, so we could read the return code</li>
+</ul>
+<pre class="giallo" style="color: #F8F8F2; background-color: #272822;"><code data-lang="asm"><span class="giallo-l"><span>.arm</span></span>
+<span class="giallo-l"><span>.global _start</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>.</span><span style="color: #66D9EF;">equ</span><span> MEMOP_ALLOC_LINEAR, </span><span style="color: #AE81FF;">0x10003</span><span>   @ MEMOP_LINEAR (</span><span style="color: #AE81FF;">0x10000</span><span>) | MEMOP_ALLOC (</span><span style="color: #AE81FF;">3</span><span>)</span></span>
+<span class="giallo-l"><span>.</span><span style="color: #66D9EF;">equ</span><span> MEMPERM_RW,         </span><span style="color: #AE81FF;">0x3</span><span>       @ MEMPERM_READ (</span><span style="color: #AE81FF;">1</span><span>) | MEMPERM_WRITE (</span><span style="color: #AE81FF;">2</span><span>)</span></span>
+<span class="giallo-l"><span>.</span><span style="color: #66D9EF;">equ</span><span> ALLOC_SIZE,         </span><span style="color: #AE81FF;">0x400000</span><span>  @ </span><span style="color: #AE81FF;">4</span><span> MB</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #A6E22E;">_start:</span></span>
+<span class="giallo-l"><span>    ldr r0, =MEMOP_ALLOC_LINEAR @ op</span></span>
+<span class="giallo-l"><span style="color: #F92672;">    mov</span><span> r1, #</span><span style="color: #AE81FF;">0</span><span>                  @ addr0</span></span>
+<span class="giallo-l"><span style="color: #F92672;">    mov</span><span> r2, #</span><span style="color: #AE81FF;">0</span><span>                  @ addr1</span></span>
+<span class="giallo-l"><span>    ldr r3, =ALLOC_SIZE         @ size</span></span>
+<span class="giallo-l"><span>    ldr r4, =MEMPERM_RW         @ perm</span></span>
+<span class="giallo-l"><span>    svc </span><span style="color: #AE81FF;">0x01</span><span>                    @ svcControlMemory</span></span>
+<span class="giallo-l"><span style="color: #F92672;">    mov</span><span style="color: #AE81FF;"> r12</span><span>, r0                 @ stash result code where the crash screen shows it</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #F92672;">    mov</span><span> r0, #</span><span style="color: #AE81FF;">0</span><span>                  @ breakReason = BREAKREASON_PANIC</span></span>
+<span class="giallo-l"><span>    svc </span><span style="color: #AE81FF;">0x3C</span><span>                    @ svcBreak</span></span></code></pre><h2 id="results">Results</h2>
+<p>I ran the code using the original homemenu exheaders, and using pomelo exheaders, and here is what i got</p>
+<h3 id="original-homemenu-exheaders">Original Homemenu ExHeaders</h3>
+<p><img src="https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_19-Jul-2026_17-01-58.png" alt="Original Homemenu ExHeaders" /></p>
+<h3 id="pomelo-exheaders">Pomelo ExHeaders</h3>
+<p><img src="https://ronpopov.me/images/homemenu_memory_shenanigans/screenshot_19-Jul-2026_17-01-52.png" alt="Pomelo ExHeaders" /></p>
+
+        </article>
+        <nav class="post-navigation">
+            <header class="post-navigation-title">
+                <h2>Read More Posts</h2>
+                <hr>
+            </header>
+            <div class="post-navigation-buttons">
+                <a rel="prev" href="https://ronpopov.me/homemenu-memory-shenanigans-part2/" aria-label="Prev article" aria-describedby="prev-title">
+                    [<span id="prev-title">Homemenu Memory Shenanigans - Part 2</span>]&nbsp;&gt;
+                </a>
+            </div>
+        </nav>
+    </main>
+    <footer class="footer">
+        <address class="socials">
+            <ul>
+                <li>
+                    <a class="social-link" href="https://ronpopov.me/atom.xml" title="atom feed">
+                        <svg role="img" aria-label="atom feed">
+                            <use href="https://ronpopov.me/images/social_icons/rss.svg#icon" aria-hidden="true" />
+                        </svg>
+                    </a>
+                </li>
+            </ul>
+        </address>
+        <p class="copyright">
+            <span>© <time>2026</time></span>
+            <span>Powered by <a rel="external" href="https://www.getzola.org">Zola</a></span>
+            <span>Theme by <a rel="external" href="https://eyalkalderon.com">ebkalderon</a></span>
+        </p>
+    </footer>
+</body>
+
+</html>
