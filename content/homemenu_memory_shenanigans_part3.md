@@ -40,7 +40,7 @@ The second interesting piece are the ExHeaders, these headers are signed by nint
 # The Experiment
 Let's build a code.bin file that 1 thing exactly, allocate a linear heap using svcControlMemory. Then run that code using the real homemenu exheaders, and using pomelo exheaders. That should tell us if the issue is in the code or in the exheaders.
 
-{% alert(type="note", icon="note", title="Side Note") %}
+{% alert(type="note", title="Side Note") %}
 I am using Luma3ds "game patching" for replacing the real homemenu `code.bin` and `exheader.bin` files with pomelo ones.
 Luma3ds does something *interesting* when replacing the original `code.bin` and `exheader.bin` files with the custom ones, and it is patching them in some cases. For examples when loading the homemenu `code.bin` file (doesn't matter if the original or a patched one), it patches out some of the security checks that the homemenu performs, such as region checks, or DS flashcart whitelists.
 You can see the patching that luma3ds performs in [patcher.c](https://github.com/LumaTeam/Luma3DS/blob/master/sysmodules/loader/source/patcher.c), specifically in the function `patchCode`.
