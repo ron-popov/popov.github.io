@@ -18,3 +18,8 @@ theme = "monokai-classic"
 
 [extra]
 # Put all your custom variables here
+
+[extra.content_security_policy]
+allowed_domains = [
+    { directive = "img-src", domains = ["'self'", "data:"] },
+]
