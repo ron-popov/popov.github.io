@@ -25,10 +25,10 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ronpopov.me/homemenu-memory-shenanigans-part3/">
     <meta property="og:site_name" content="Ron Popov">
-    <meta property="og:updated_time" content="2026-07-20T21:08:11.459367027+03:00">
+    <meta property="og:updated_time" content="2026-07-20T21:10:47.209011613+03:00">
     <meta property="article:published_time" content="2026-07-19T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
-    <meta name="twitter:data2" content="5 min">
+    <meta name="twitter:data2" content="6 min">
 </head>
 
 <body class="layout-center" data-theme="terminus">
@@ -50,7 +50,7 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2026-07-19"><time datetime="2026-07-19">2026.07.19</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="959 words"><time datetime="PT5M">5 min</time> read</li>
+                    <li title="1,011 words"><time datetime="PT6M">6 min</time> read</li>
                 </ul>
             </header>
 
@@ -129,8 +129,10 @@ You can see the patching that luma3ds performs in <a rel="external" href="https:
 <p>You can see in the crash dump of the original homemenu exheaders that the <code>svcControlMemory</code> call succeeded, indicated by the value 0 in R12. And you can see that when i used pomelo ExHeaders, the value in R12 was <code>0xD86007F3</code>, which means the <code>svcControlMemory</code> FAILED when using pomelo ExHeaders files.</p>
 <h1 id="what-now">What Now?</h1>
 <p>This really narrows down the root cause of our issue. Now i know i just need to make the ExHeaders of pomelo closer to the real ones and finally the heap allocation should work.</p>
-<p>I am using <a rel="external" href="https://github.com/3DSGuy/Project_CTR/tree/e8f5f529c54ff9b22a2491a480ffa69206bf7b19/makerom">makerom</a> to build the exheaders of pomelo, a <code>template.rsf</code> file is used to tell makerom which values to put in the pomelo exheaders.</p>
-<p>A couple of claude prompts later, <strong>I finally found the culprit!</strong>
+<p>I am using <a rel="external" href="https://github.com/3DSGuy/Project_CTR/tree/e8f5f529c54ff9b22a2491a480ffa69206bf7b19/makerom">makerom</a> to build the exheaders of pomelo. And i am using a <code>template.rsf</code> file to tell makerom which values to put in the pomelo exheaders.</p>
+<p>I dumped the CXI file of the original homemenu from my own console, and ran <code>ctrtool</code> on it to extract the headers.
+I gave claude my current <code>template.rsf</code> file and the desired homemenu exheaders, and told it to make my headers as close as possible to the real ones.</p>
+<p>Then, A couple of claude prompts later, <strong>I finally found the culprit!</strong>
 The culprit was the <code>KernelVersion</code> value, which indicates for which kernel version that title was built and tested against.</p>
 <p>I Honestly have no idea why that caused, specifically the allocation of linear heaps to fail...
 I put it wayyyyy too many hours into debugging this, that at this point i'm kinda just happy it works and i can move on to other bugs i need to fix in pomelo :)</p>

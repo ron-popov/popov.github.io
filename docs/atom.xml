@@ -97,8 +97,10 @@ You can see the patching that luma3ds performs in &lt;a rel=&quot;external&quot;
 &lt;p&gt;You can see in the crash dump of the original homemenu exheaders that the &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; call succeeded, indicated by the value 0 in R12. And you can see that when i used pomelo ExHeaders, the value in R12 was &lt;code&gt;0xD86007F3&lt;&#x2F;code&gt;, which means the &lt;code&gt;svcControlMemory&lt;&#x2F;code&gt; FAILED when using pomelo ExHeaders files.&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;what-now&quot;&gt;What Now?&lt;&#x2F;h1&gt;
 &lt;p&gt;This really narrows down the root cause of our issue. Now i know i just need to make the ExHeaders of pomelo closer to the real ones and finally the heap allocation should work.&lt;&#x2F;p&gt;
-&lt;p&gt;I am using &lt;a rel=&quot;external&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;3DSGuy&#x2F;Project_CTR&#x2F;tree&#x2F;e8f5f529c54ff9b22a2491a480ffa69206bf7b19&#x2F;makerom&quot;&gt;makerom&lt;&#x2F;a&gt; to build the exheaders of pomelo, a &lt;code&gt;template.rsf&lt;&#x2F;code&gt; file is used to tell makerom which values to put in the pomelo exheaders.&lt;&#x2F;p&gt;
-&lt;p&gt;A couple of claude prompts later, &lt;strong&gt;I finally found the culprit!&lt;&#x2F;strong&gt;
+&lt;p&gt;I am using &lt;a rel=&quot;external&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;3DSGuy&#x2F;Project_CTR&#x2F;tree&#x2F;e8f5f529c54ff9b22a2491a480ffa69206bf7b19&#x2F;makerom&quot;&gt;makerom&lt;&#x2F;a&gt; to build the exheaders of pomelo. And i am using a &lt;code&gt;template.rsf&lt;&#x2F;code&gt; file to tell makerom which values to put in the pomelo exheaders.&lt;&#x2F;p&gt;
+&lt;p&gt;I dumped the CXI file of the original homemenu from my own console, and ran &lt;code&gt;ctrtool&lt;&#x2F;code&gt; on it to extract the headers.
+I gave claude my current &lt;code&gt;template.rsf&lt;&#x2F;code&gt; file and the desired homemenu exheaders, and told it to make my headers as close as possible to the real ones.&lt;&#x2F;p&gt;
+&lt;p&gt;Then, A couple of claude prompts later, &lt;strong&gt;I finally found the culprit!&lt;&#x2F;strong&gt;
 The culprit was the &lt;code&gt;KernelVersion&lt;&#x2F;code&gt; value, which indicates for which kernel version that title was built and tested against.&lt;&#x2F;p&gt;
 &lt;p&gt;I Honestly have no idea why that caused, specifically the allocation of linear heaps to fail...
 I put it wayyyyy too many hours into debugging this, that at this point i&#x27;m kinda just happy it works and i can move on to other bugs i need to fix in pomelo :)&lt;&#x2F;p&gt;

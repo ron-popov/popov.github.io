@@ -94,9 +94,12 @@ You can see in the crash dump of the original homemenu exheaders that the `svcCo
 # What Now?
 This really narrows down the root cause of our issue. Now i know i just need to make the ExHeaders of pomelo closer to the real ones and finally the heap allocation should work.
 
-I am using [makerom](https://github.com/3DSGuy/Project_CTR/tree/e8f5f529c54ff9b22a2491a480ffa69206bf7b19/makerom) to build the exheaders of pomelo, a `template.rsf` file is used to tell makerom which values to put in the pomelo exheaders.
+I am using [makerom](https://github.com/3DSGuy/Project_CTR/tree/e8f5f529c54ff9b22a2491a480ffa69206bf7b19/makerom) to build the exheaders of pomelo. And i am using a `template.rsf` file to tell makerom which values to put in the pomelo exheaders.
 
-A couple of claude prompts later, **I finally found the culprit!**
+I dumped the CXI file of the original homemenu from my own console, and ran `ctrtool` on it to extract the headers.
+I gave claude my current `template.rsf` file and the desired homemenu exheaders, and told it to make my headers as close as possible to the real ones.
+
+Then, A couple of claude prompts later, **I finally found the culprit!**
 The culprit was the `KernelVersion` value, which indicates for which kernel version that title was built and tested against.
 
 I Honestly have no idea why that caused, specifically the allocation of linear heaps to fail...
