@@ -19,7 +19,14 @@ theme = "monokai-classic"
 [extra]
 # Put all your custom variables here
 
+
+# Fix icon in "homemenu memory shenanigans part 3" side note box.
 [extra.content_security_policy]
 allowed_domains = [
     { directive = "img-src", domains = ["'self'", "data:"] },
+]
+
+socials = [
+    { name = "github", url = "https://github.com/ron-popov" },
+    { name = "linkedin", url = "https://www.linkedin.com/in/ron-popov-a3389a228" },
 ]
