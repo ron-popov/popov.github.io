@@ -12,3 +12,5 @@ framed = true
 
 
 My name is Ron Popov, and welcome to my Blog!
+I am a Cyber Security Researcher by profession, and is interested in breaking stuff and solving hard problems.
+This blog contains content about my 3ds research adventures, hopefully more topics in the future, enjoy!
