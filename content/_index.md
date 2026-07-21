@@ -8,4 +8,5 @@ framed = true
 +++
 
 
-bla bla
+<h1>Hi There!</h1>
+My name is Ron Popov, and welcome to my Blog!
