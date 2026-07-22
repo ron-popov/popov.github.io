@@ -25,7 +25,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ronpopov.me/homemenu-memory-shenanigans-part3/">
     <meta property="og:site_name" content="Ron Popov">
-    <meta property="og:updated_time" content="2026-07-21T09:49:32.553808760+03:00">
+    <meta property="og:updated_time" content="2026-07-22T10:57:28.432648622+03:00">
     <meta property="article:published_time" content="2026-07-19T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
     <meta name="twitter:data2" content="6 min">
@@ -50,7 +50,7 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2026-07-19"><time datetime="2026-07-19">2026.07.19</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="1,011 words"><time datetime="PT6M">6 min</time> read</li>
+                    <li title="1,151 words"><time datetime="PT6M">6 min</time> read</li>
                 </ul>
             </header>
 
@@ -133,9 +133,15 @@ You can see the patching that luma3ds performs in <a rel="external" href="https:
 <p>I dumped the CXI file of the original homemenu from my own console, and ran <code>ctrtool</code> on it to extract the headers.
 I gave claude my current <code>template.rsf</code> file and the desired homemenu exheaders, and told it to make my headers as close as possible to the real ones.</p>
 <p>Then, A couple of claude prompts later, <strong>I finally found the culprit!</strong>
-The culprit was the <code>KernelVersion</code> value, which indicates for which kernel version that title was built and tested against.</p>
-<p>I Honestly have no idea why that caused, specifically the allocation of linear heaps to fail...
-I put it wayyyyy too many hours into debugging this, that at this point i'm kinda just happy it works and i can move on to other bugs i need to fix in pomelo :)</p>
+The culprit was the <code>KernelVersion</code> value, which indicates for which kernel version that title was built and tested against.
+After setting the kernel version to <code>2.50</code>, the linear heap allocation worked!</p>
+<p>I started having other issues related to copying buffers from the linear heap to VRAM, but i think that is a story for another time :)</p>
+<p>The reason the kernelversion even makes a difference is that there were some changes to the virtual memory allocation in kernel version 2.44.
+The virtual address to which the physical memory was mapped, was changed in kernel version 2.44. Before 2.44, the virtual address to which heaps were mapped was <code>0x14000000</code>, and after 2.44 it was <code>0x30000000</code>.</p>
+<p>Even after understanding the connection between the kernel version and why it affects linear heap allocations, i am still not entirely sure why not setting a kernel version causes the allocation to fail.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>That was a pretty fun research, even tho it was pretty frustrating at times, but i think the most interesting part to take from there is the research itself, and hopefully you learned something new about 3ds heap allocation :)</p>
+<p>Like i said, i am now having other issues related to linear memory and VRAM, so i might write some more pretty soon :)</p>
 
         </article>
         <nav class="post-navigation">

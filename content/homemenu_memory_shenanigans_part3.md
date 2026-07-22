@@ -101,6 +101,16 @@ I gave claude my current `template.rsf` file and the desired homemenu exheaders,
 
 Then, A couple of claude prompts later, **I finally found the culprit!**
 The culprit was the `KernelVersion` value, which indicates for which kernel version that title was built and tested against.
+After setting the kernel version to `2.50`, the linear heap allocation worked!
 
-I Honestly have no idea why that caused, specifically the allocation of linear heaps to fail...
-I put it wayyyyy too many hours into debugging this, that at this point i'm kinda just happy it works and i can move on to other bugs i need to fix in pomelo :)
+I started having other issues related to copying buffers from the linear heap to VRAM, but i think that is a story for another time :)
+
+The reason the kernelversion even makes a difference is that there were some changes to the virtual memory allocation in kernel version 2.44.
+The virtual address to which the physical memory was mapped, was changed in kernel version 2.44. Before 2.44, the virtual address to which heaps were mapped was `0x14000000`, and after 2.44 it was `0x30000000`.
+
+Even after understanding the connection between the kernel version and why it affects linear heap allocations, i am still not entirely sure why not setting a kernel version causes the allocation to fail.
+
+# Conclusion
+That was a pretty fun research, even tho it was pretty frustrating at times, but i think the most interesting part to take from there is the research itself, and hopefully you learned something new about 3ds heap allocation :)
+
+Like i said, i am now having other issues related to linear memory and VRAM, so i might write some more pretty soon :)

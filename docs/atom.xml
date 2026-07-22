@@ -101,9 +101,15 @@ You can see the patching that luma3ds performs in &lt;a rel=&quot;external&quot;
 &lt;p&gt;I dumped the CXI file of the original homemenu from my own console, and ran &lt;code&gt;ctrtool&lt;&#x2F;code&gt; on it to extract the headers.
 I gave claude my current &lt;code&gt;template.rsf&lt;&#x2F;code&gt; file and the desired homemenu exheaders, and told it to make my headers as close as possible to the real ones.&lt;&#x2F;p&gt;
 &lt;p&gt;Then, A couple of claude prompts later, &lt;strong&gt;I finally found the culprit!&lt;&#x2F;strong&gt;
-The culprit was the &lt;code&gt;KernelVersion&lt;&#x2F;code&gt; value, which indicates for which kernel version that title was built and tested against.&lt;&#x2F;p&gt;
-&lt;p&gt;I Honestly have no idea why that caused, specifically the allocation of linear heaps to fail...
-I put it wayyyyy too many hours into debugging this, that at this point i&#x27;m kinda just happy it works and i can move on to other bugs i need to fix in pomelo :)&lt;&#x2F;p&gt;
+The culprit was the &lt;code&gt;KernelVersion&lt;&#x2F;code&gt; value, which indicates for which kernel version that title was built and tested against.
+After setting the kernel version to &lt;code&gt;2.50&lt;&#x2F;code&gt;, the linear heap allocation worked!&lt;&#x2F;p&gt;
+&lt;p&gt;I started having other issues related to copying buffers from the linear heap to VRAM, but i think that is a story for another time :)&lt;&#x2F;p&gt;
+&lt;p&gt;The reason the kernelversion even makes a difference is that there were some changes to the virtual memory allocation in kernel version 2.44.
+The virtual address to which the physical memory was mapped, was changed in kernel version 2.44. Before 2.44, the virtual address to which heaps were mapped was &lt;code&gt;0x14000000&lt;&#x2F;code&gt;, and after 2.44 it was &lt;code&gt;0x30000000&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Even after understanding the connection between the kernel version and why it affects linear heap allocations, i am still not entirely sure why not setting a kernel version causes the allocation to fail.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h1&gt;
+&lt;p&gt;That was a pretty fun research, even tho it was pretty frustrating at times, but i think the most interesting part to take from there is the research itself, and hopefully you learned something new about 3ds heap allocation :)&lt;&#x2F;p&gt;
+&lt;p&gt;Like i said, i am now having other issues related to linear memory and VRAM, so i might write some more pretty soon :)&lt;&#x2F;p&gt;
 </content>
         
     </entry>
