@@ -108,7 +108,7 @@ I started having other issues related to copying buffers from the linear heap to
 The reason the kernelversion even makes a difference is that there were some changes to the virtual memory allocation in kernel version 2.44.
 The virtual address to which the physical memory was mapped, was changed in kernel version 2.44. Before 2.44, the virtual address to which heaps were mapped was `0x14000000`, and after 2.44 it was `0x30000000`.
 
-Even after understanding the connection between the kernel version and why it affects linear heap allocations, i am still not entirely sure why not setting a kernel version causes the allocation to fail.
+Even after understanding the connection between the kernel version and why it affects linear heap allocations, i am still not entirely sure why not setting a kernel version causes the allocation to fail. I would expect the OS to be backwards compatible with old games, taht were built for older kernels.
 
 # Conclusion
 That was a pretty fun research, even tho it was pretty frustrating at times, but i think the most interesting part to take from there is the research itself, and hopefully you learned something new about 3ds heap allocation :)

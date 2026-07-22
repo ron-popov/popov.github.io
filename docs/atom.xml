@@ -106,7 +106,7 @@ After setting the kernel version to &lt;code&gt;2.50&lt;&#x2F;code&gt;, the line
 &lt;p&gt;I started having other issues related to copying buffers from the linear heap to VRAM, but i think that is a story for another time :)&lt;&#x2F;p&gt;
 &lt;p&gt;The reason the kernelversion even makes a difference is that there were some changes to the virtual memory allocation in kernel version 2.44.
 The virtual address to which the physical memory was mapped, was changed in kernel version 2.44. Before 2.44, the virtual address to which heaps were mapped was &lt;code&gt;0x14000000&lt;&#x2F;code&gt;, and after 2.44 it was &lt;code&gt;0x30000000&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
-&lt;p&gt;Even after understanding the connection between the kernel version and why it affects linear heap allocations, i am still not entirely sure why not setting a kernel version causes the allocation to fail.&lt;&#x2F;p&gt;
+&lt;p&gt;Even after understanding the connection between the kernel version and why it affects linear heap allocations, i am still not entirely sure why not setting a kernel version causes the allocation to fail. I would expect the OS to be backwards compatible with old games, taht were built for older kernels.&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h1&gt;
 &lt;p&gt;That was a pretty fun research, even tho it was pretty frustrating at times, but i think the most interesting part to take from there is the research itself, and hopefully you learned something new about 3ds heap allocation :)&lt;&#x2F;p&gt;
 &lt;p&gt;Like i said, i am now having other issues related to linear memory and VRAM, so i might write some more pretty soon :)&lt;&#x2F;p&gt;
