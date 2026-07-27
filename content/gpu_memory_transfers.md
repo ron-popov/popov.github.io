@@ -74,4 +74,10 @@ Once we have received all 3 signals we can be sure that the GPU did it's job and
 
 ![GPU ProcessCommandList Diagram](https://ronpopov.me/images/gpu_processing_diag.png)
 
+
+# Debugging The Issue
+As i said, after we transfered Pomelo to use the System region in FCRAM (instead of the APP region), pomelo started hanging shortly after booting...
+
+I would get some text on the top screen, but the bottom screen, where i actually rendered textures and pretty stuff, was empty.
+
 # TL;DR
