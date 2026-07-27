@@ -7,7 +7,7 @@
     <updated>2026-07-27T00:00:00+00:00</updated>
     <id>https://ronpopov.me/atom.xml</id>
     <entry xml:lang="en">
-        <title>GPU Memory Access Bugs</title>
+        <title>Debugging GPU Memory Access Bugs</title>
         <published>2026-07-27T00:00:00+00:00</published>
         <updated>2026-07-27T00:00:00+00:00</updated>
         
@@ -36,8 +36,10 @@ And since the homemenu, is a &lt;strong&gt;pretty&lt;&#x2F;strong&gt; critical p
 &lt;p&gt;In the previous 3 blogs, i was talking about a low level issue. When a 3ds process starts, it requests from the kernel a memory region it can use as heap, and one it can use as linear heap (heap for storing textures). For regular apps, libctru (open source 3ds SDK) just takes care of it, but when you are building a homemenu, it&#x27;s not that simple...&lt;&#x2F;p&gt;
 &lt;p&gt;After i fixed the linear heap allocation, i started having other issues, in mikage everything was working just fine.
 However on real hardware, the rendering failed and after some basic debugging, it&#x27;s seems like the rendering process simply hangs :(&lt;&#x2F;p&gt;
-&lt;h1 id=&quot;3ds-gpu-rendering-process&quot;&gt;3ds GPU Rendering Process&lt;&#x2F;h1&gt;
-&lt;p&gt;Before we talk about what is the issue that i experienced with pomelo, we need to learn a bit about the 3ds rendering process.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h1 id=&quot;3ds-gpu-rendering-process&quot;&gt;&lt;h1 style=&quot;text-align: center;&quot;&gt;3ds GPU Rendering Process&lt;&#x2F;h1&gt;&lt;&#x2F;h1&gt;
+&lt;h1 style=&quot;text-align: center;&quot;&gt;3ds GPU Rendering Process&lt;&#x2F;h1&gt;
+Before we talk about what is the issue that i experienced with pomelo, we need to learn a bit about the 3ds rendering process.
 &lt;p&gt;The 3ds has the PICA200 GPU that we will be talking about today. And the GSP module that acts as a driver for communicating with the GPU.
 We also have &lt;code&gt;citro3d&lt;&#x2F;code&gt;, which is a usermode sdk, meaning the it&#x27;s part of the app that wants to render stuff, that we will be using.&lt;&#x2F;p&gt;
 &lt;p&gt;Assuming we have already initialized everything required for rendering, let&#x27;s look at what happens every frame we render :)&lt;&#x2F;p&gt;
@@ -74,13 +76,14 @@ Each such call has a signal of it&#x27;s own that indicates the action finished:
 &lt;p&gt;Once we have received all 3 signals we can be sure that the GPU did it&#x27;s job and the image should now show up on the console :)&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;diagram&quot;&gt;Diagram!&lt;&#x2F;h2&gt;
 &lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_crash&#x2F;gpu_processing_diag.png&quot; alt=&quot;GPU ProcessCommandList Diagram&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
 &lt;h1 id=&quot;debugging-the-issue&quot;&gt;Debugging The Issue&lt;&#x2F;h1&gt;
 &lt;p&gt;As i said, after we transfered Pomelo to use the System region in FCRAM (instead of the APP region), pomelo started hanging shortly after booting...&lt;&#x2F;p&gt;
 &lt;p&gt;I would get some text on the top screen, but the bottom screen, where i actually rendered textures and pretty stuff, was empty.
 So i started adding print statements, and i very quickly learned that the part that was hanging pomelo was FrameEnd.&lt;&#x2F;p&gt;
 &lt;p&gt;So i continued debugging, the issue was that we were waiting for a signal that the GPU never sent, but which one?
 I printed all the signals and stubbed each of the calls to the GSP module, and very quickly learned the &lt;strong&gt;culprit was &lt;code&gt;ProcessCommandList&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
-&lt;h2 id=&quot;virtual-addr-to-physical-addr-translation&quot;&gt;Virtual Addr to Physical Addr Translation&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;virtual-addr-to-physical-addr-translation&quot;&gt;Virtual Addr to Physical Addr Translation&lt;&#x2F;h3&gt;
 &lt;p&gt;I wanted to test if the issue could be in the translation between virtual addr to physical addr by the GSP module.
 I did all sorts of random stuff to test it but the final test was editing the GSP module itself to crash when sending the physical addr to the GPU. The crash would give us the register dump, which would contain the physical addr that was passed to the GPU.&lt;&#x2F;p&gt;
 &lt;p&gt;I used claude to find the exact point in the GSP module that we need to replace with svcBreak, and build me a patch file.
@@ -93,7 +96,7 @@ Because this is a sysmodule and not a regular title, we can&#x27;t just use &quo
 &lt;p&gt;The relevant register is R1, which contains the physical memory (after translation from virtual) of the gpuCmdBuffer that is transfered to the GPU by the GSP module.
 As you can see, the physical address of the buffer that pomelo allocated is &lt;code&gt;0x280BBC00&lt;&#x2F;code&gt;. The physical address of the stock homemenu buffer is &lt;code&gt;0x28005AA0&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
 &lt;p&gt;Hmmmm, it&#x27;s not that same, but they are in the same region of memory, with a diff of around 0xB0000 bytes (~700KB), it&#x27;s probably not substantial enough to be the reason for the hang :(&lt;&#x2F;p&gt;
-&lt;h2 id=&quot;what-commands-are-being-passed-to-the-gpu&quot;&gt;What commands are being passed to the GPU?&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;what-commands-are-being-passed-to-the-gpu&quot;&gt;What commands are being passed to the GPU?&lt;&#x2F;h3&gt;
 &lt;p&gt;While asking claude about the hang i am having, it raised an interesting point. He saw i am using the stock font that comes with the console. Claude was thinking that the font was in some shared memory region that could be unreachable to the GPU.
 I was able to disprove this fairly quickly but this led to an interesting thought.&lt;&#x2F;p&gt;
 &lt;p&gt;If the ProcessCommandList call hangs the GPU, the reason could be one of that commands that the GPU tries to process?

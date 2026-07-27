@@ -1,5 +1,5 @@
 +++
-title = "GPU Memory Access Bugs"
+title = "Debugging GPU Memory Access Bugs"
 date = 2026-07-27
 draft = false
 +++
@@ -21,10 +21,11 @@ After i fixed the linear heap allocation, i started having other issues, in mika
 However on real hardware, the rendering failed and after some basic debugging, it's seems like the rendering process simply hangs :(
 
 
+---
 
 
-
-# 3ds GPU Rendering Process
+# <h1 style="text-align: center;">3ds GPU Rendering Process</h1>
+<h1 style="text-align: center;">3ds GPU Rendering Process</h1>
 Before we talk about what is the issue that i experienced with pomelo, we need to learn a bit about the 3ds rendering process.
 
 The 3ds has the PICA200 GPU that we will be talking about today. And the GSP module that acts as a driver for communicating with the GPU.
@@ -82,7 +83,7 @@ Once we have received all 3 signals we can be sure that the GPU did it's job and
 
 
 
-
+---
 
 
 # Debugging The Issue
@@ -94,7 +95,7 @@ So i started adding print statements, and i very quickly learned that the part t
 So i continued debugging, the issue was that we were waiting for a signal that the GPU never sent, but which one?
 I printed all the signals and stubbed each of the calls to the GSP module, and very quickly learned the **culprit was `ProcessCommandList`**.
 
-## Virtual Addr to Physical Addr Translation
+### Virtual Addr to Physical Addr Translation
 I wanted to test if the issue could be in the translation between virtual addr to physical addr by the GSP module.
 I did all sorts of random stuff to test it but the final test was editing the GSP module itself to crash when sending the physical addr to the GPU. The crash would give us the register dump, which would contain the physical addr that was passed to the GPU.
 
@@ -115,7 +116,7 @@ As you can see, the physical address of the buffer that pomelo allocated is `0x2
 Hmmmm, it's not that same, but they are in the same region of memory, with a diff of around 0xB0000 bytes (~700KB), it's probably not substantial enough to be the reason for the hang :(
 
 
-## What commands are being passed to the GPU?
+### What commands are being passed to the GPU?
 While asking claude about the hang i am having, it raised an interesting point. He saw i am using the stock font that comes with the console. Claude was thinking that the font was in some shared memory region that could be unreachable to the GPU.
 I was able to disprove this fairly quickly but this led to an interesting thought.
 
