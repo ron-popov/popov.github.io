@@ -41,23 +41,24 @@ However on real hardware, the rendering failed and after some basic debugging, i
 &lt;p&gt;The 3ds has the PICA200 GPU that we will be talking about today. And the GSP module that acts as a driver for communicating with the GPU.
 We also have &lt;code&gt;citro3d&lt;&#x2F;code&gt;, which is a usermode sdk, meaning the it&#x27;s part of the app that wants to render stuff, that we will be using.&lt;&#x2F;p&gt;
 &lt;p&gt;Assuming we have already initialized everything required for rendering, let&#x27;s look at what happens every frame we render :)&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;frame-init&quot;&gt;Frame Init&lt;&#x2F;h3&gt;
+&lt;h2 id=&quot;frame-init&quot;&gt;Frame Init&lt;&#x2F;h2&gt;
 &lt;p&gt;We start by zeroing out the &lt;code&gt;gpuCmdBuffer&lt;&#x2F;code&gt;, as we don&#x27;t want any garbage or leftovers in that buffer.&lt;&#x2F;p&gt;
 &lt;p&gt;One of the most important parts of the rendering process is the &lt;code&gt;gpuCmdBuffer&lt;&#x2F;code&gt;, it contains all the render instructions for the GPU, including textures to render, text, vectors (lines, rectangles) and etc...
 The &lt;code&gt;gpuCmdBuffer&lt;&#x2F;code&gt; is initialized by citro3d, and allocated in the linear heap of pomele, you should already know what is a linear heap from the previous blog :)&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;adding-textures-and-vectors&quot;&gt;Adding Textures and Vectors&lt;&#x2F;h3&gt;
+&lt;h2 id=&quot;adding-textures-and-vectors&quot;&gt;Adding Textures and Vectors&lt;&#x2F;h2&gt;
 &lt;p&gt;Now is the time for us to get creative :)&lt;&#x2F;p&gt;
 &lt;p&gt;Pomelo now can draw the background, draw the game icons, add the game name and publisher to the frame, basically all the interesting stuff.
 All these actions are transformed into commands that are added to the command buffer. They are not actually rendered, only stored in a temporary buffer, waiting to be flushed to the GPU.&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;frame-end&quot;&gt;Frame End&lt;&#x2F;h3&gt;
+&lt;h2 id=&quot;frame-end&quot;&gt;Frame End&lt;&#x2F;h2&gt;
 &lt;p&gt;Now is the Interesting part...&lt;&#x2F;p&gt;
 &lt;p&gt;After pomelo added all the textures and everything it wants to render, we have a gpuCmdBuffer that is filled with instruction for the GPU to process and make the magic happen.&lt;&#x2F;p&gt;
+&lt;p&gt;There&lt;&#x2F;p&gt;
 &lt;p&gt;Now we ask the GSP module to render the beautiful gpuCmdBuffer that we have built. We give the GSP module the Virtual Address of the gpuCmdBuffer and it&#x27;s size. The GSP module translates this virtual address into a physical address, the GPU can actually use and access. Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it&#x27;s simply a hardcoded offset between the two addresses.&lt;&#x2F;p&gt;
 &lt;p&gt;The next stage is giving the GPU the physical address of the gpuCmdBuffer and it&#x27;s size. And now we wait :)
 We wait for the GPU to render everything we asked for.&lt;&#x2F;p&gt;
 &lt;p&gt;We will know that the GPU finished processing the gpuCmdBuffer by getting a signal that indicates the processing has finished. There are multiple signals that the GPU can send, we are waiting for a specific one called &lt;code&gt;GSPGPU_EVENT_P3D&lt;&#x2F;code&gt;, that indicates the command processing has finished.&lt;&#x2F;p&gt;
 &lt;p&gt;Once we have received that signal we can be sure that the GPU did it&#x27;s job and the image should now show up on the console.&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;diagram&quot;&gt;Diagram!&lt;&#x2F;h3&gt;
+&lt;h2 id=&quot;diagram&quot;&gt;Diagram!&lt;&#x2F;h2&gt;
 &lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_processing_diag.png&quot; alt=&quot;GPU Write Diagram&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;tl-dr&quot;&gt;TL;DR&lt;&#x2F;h1&gt;
 </content>

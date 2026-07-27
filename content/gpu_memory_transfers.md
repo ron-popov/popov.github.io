@@ -26,22 +26,24 @@ We also have `citro3d`, which is a usermode sdk, meaning the it's part of the ap
 
 Assuming we have already initialized everything required for rendering, let's look at what happens every frame we render :)
 
-### Frame Init
+## Frame Init
 We start by zeroing out the `gpuCmdBuffer`, as we don't want any garbage or leftovers in that buffer.
 
 One of the most important parts of the rendering process is the `gpuCmdBuffer`, it contains all the render instructions for the GPU, including textures to render, text, vectors (lines, rectangles) and etc...
 The `gpuCmdBuffer` is initialized by citro3d, and allocated in the linear heap of pomele, you should already know what is a linear heap from the previous blog :)
 
-### Adding Textures and Vectors
+## Adding Textures and Vectors
 Now is the time for us to get creative :)
 
 Pomelo now can draw the background, draw the game icons, add the game name and publisher to the frame, basically all the interesting stuff.
 All these actions are transformed into commands that are added to the command buffer. They are not actually rendered, only stored in a temporary buffer, waiting to be flushed to the GPU.
 
-### Frame End
+## Frame End
 Now is the Interesting part...
 
 After pomelo added all the textures and everything it wants to render, we have a gpuCmdBuffer that is filled with instruction for the GPU to process and make the magic happen.
+
+There
 
 Now we ask the GSP module to render the beautiful gpuCmdBuffer that we have built. We give the GSP module the Virtual Address of the gpuCmdBuffer and it's size. The GSP module translates this virtual address into a physical address, the GPU can actually use and access. Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it's simply a hardcoded offset between the two addresses.
 
@@ -52,7 +54,7 @@ We will know that the GPU finished processing the gpuCmdBuffer by getting a sign
 
 Once we have received that signal we can be sure that the GPU did it's job and the image should now show up on the console.
 
-### Diagram!
+## Diagram!
 
 ![GPU Write Diagram](https://ronpopov.me/images/gpu_processing_diag.png)
 
