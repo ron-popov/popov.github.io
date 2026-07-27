@@ -45,10 +45,10 @@ After pomelo added all the textures and everything it wants to render, we have a
 
 Now there are 3 different calls to the GSP module to do in order to render the frame:
 
-<u>**MemoryFill**</u>
+### 1. MemoryFill
 This tells the GPU to clean the VRAM memory. It is used to clear the previous frame before starting to render new stuff on top of it.
 
-<u>**ProcessCommandList**</u>
+### 2. ProcessCommandList
 This call is the most complicated by far, so i want to focus on it a bit more. Also (spoiler alert), this is the call that caused pomelo to hang.
 It tells the GSP module to render the beautiful gpuCmdBuffer that we have built.
 
@@ -58,10 +58,10 @@ Then the GSP module is giving the GPU the physical address of the gpuCmdBuffer a
 
 SPOILER ALERT : This is the call that caused the hang, i will soon explain how i discoverd this.
 
-<u>**DisplayTransfer**</u>
+### 3. DisplayTransfer
 This calls tells the GSP module to tell the GPU to start rendering all the processing it just did.
 
-## Waiting for a return signal
+## Waiting for a Return Signal
 We will know that the GPU finished what the GSP module asked for, by receiving signals from the GPU that indicate it's status.
 Each such call has a signal of it's own that indicates the action finished:
 * PSC0 - Indicates the MemoryFill finished
@@ -72,6 +72,6 @@ Once we have received all 3 signals we can be sure that the GPU did it's job and
 
 ## Diagram!
 
-![GPU Write Diagram](https://ronpopov.me/images/gpu_processing_diag.png)
+![GPU ProcessCommandList Diagram](https://ronpopov.me/images/gpu_processing_diag.png)
 
 # TL;DR
