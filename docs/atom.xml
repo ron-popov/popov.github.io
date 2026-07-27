@@ -108,7 +108,17 @@ The default base address in citro3d is 0x18000000, The application region of FCR
 &lt;pre class=&quot;giallo&quot; style=&quot;color: #F8F8F2; background-color: #272822;&quot;&gt;&lt;code data-lang=&quot;plain&quot;&gt;&lt;span class=&quot;giallo-l&quot;&gt;&lt;span&gt;(FCRAM System Region Start) - (Citro3d base address) = Exactly 256MB!&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Meaning, &lt;strong&gt;THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!&lt;&#x2F;strong&gt;
 The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;the-fix&quot;&gt;The Fix&lt;&#x2F;h1&gt;
+&lt;p&gt;The fix is as easy as bumping the value up to 0x20000000, and it fixes the issues.
+The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn&#x27;t contain FCRAM, it contains VRAM and QTM Memory. I wasn&#x27;t planning to use them anytime soon, but this is something to be aware of.&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;tl-dr&quot;&gt;TL;DR&lt;&#x2F;h1&gt;
+&lt;ol&gt;
+&lt;li&gt;We changed pomelo to use SYSTEM region of FCRAM, instead of APPLICATION region of FCRAM.&lt;&#x2F;li&gt;
+&lt;li&gt;When drawing a frame we give the GPU a vertices buffer that is stored in the linear heap. The access is done by specifying a base address, that is hardcoded in the SDK we are using, and also an offset from the base address.&lt;&#x2F;li&gt;
+&lt;li&gt;The GPU can only access the 256MB of memory after the base address.&lt;&#x2F;li&gt;
+&lt;li&gt;The new SYSTEM region is not part of those 256MB of memory that the GPU can access&lt;&#x2F;li&gt;
+&lt;li&gt;We need to change the value of the base address in the SDK we are using.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
 </content>
         
     </entry>
