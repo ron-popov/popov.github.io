@@ -25,7 +25,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ronpopov.me/gpu-memory-transfers/">
     <meta property="og:site_name" content="Ron Popov">
-    <meta property="og:updated_time" content="2026-07-27T23:59:35.383183980+03:00">
+    <meta property="og:updated_time" content="2026-07-28T00:01:31.557953244+03:00">
     <meta property="article:published_time" content="2026-07-27T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
     <meta name="twitter:data2" content="9 min">
@@ -143,6 +143,7 @@ The default base address in citro3d is 0x18000000, The application region of FCR
 <p>Meaning, <strong>THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!</strong>
 The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.</p>
 <p><img src="https://ronpopov.me/images/gpu_crash/memory_layout_diag.png" alt="GPU Base Address Diagram" /></p>
+<hr />
 <h1 id="the-fix"><h1 style="text-align: center;">The Fix</h1></h1>
 <p>The fix is as easy as bumping the value up to 0x20000000, and it fixes the issues.
 The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn't contain FCRAM, it contains VRAM and QTM Memory. I wasn't planning to use them anytime soon, but this is something to be aware of.</p>

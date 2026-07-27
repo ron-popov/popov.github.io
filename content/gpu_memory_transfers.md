@@ -141,7 +141,7 @@ The border of the region which the GPU can access is exactly where the System Re
 
 ![GPU Base Address Diagram](https://ronpopov.me/images/gpu_crash/memory_layout_diag.png)
 
-
+---
 
 # <h1 style="text-align: center;">The Fix</h1>
 The fix is as easy as bumping the value up to 0x20000000, and it fixes the issues.
