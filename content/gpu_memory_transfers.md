@@ -24,13 +24,13 @@ Before we talk about what is the issue that i experienced with pomelo, we need t
 The 3ds has the PICA200 GPU that we will be talking about today. And the GSP module that acts as a driver for communicating with the GPU.
 We also have `citro3d`, which is a usermode sdk, meaning the it's part of the app that wants to render stuff, that we will be using.
 
-One of the most important parts of the rendering process is the `gpuCmdBuffer`, it contains all the render instructions for the GPU, including textures to render, text, vectors (lines, rectangles) and etc...
-The `gpuCmdBuffer` is initialized by citro3d, and allocated in the linear heap of pomele, you should already know what is a linear heap from the previous blog :)
-
 Assuming we have already initialized everything required for rendering, let's look at what happens every frame we render :)
 
 ### Frame Init
 We start by zeroing out the `gpuCmdBuffer`, as we don't want any garbage or leftovers in that buffer.
+
+One of the most important parts of the rendering process is the `gpuCmdBuffer`, it contains all the render instructions for the GPU, including textures to render, text, vectors (lines, rectangles) and etc...
+The `gpuCmdBuffer` is initialized by citro3d, and allocated in the linear heap of pomele, you should already know what is a linear heap from the previous blog :)
 
 ### Adding Textures and Vectors
 Now is the time for us to get creative :)
@@ -43,8 +43,10 @@ Now is the Interesting part...
 
 After pomelo added all the textures and everything it wants to render, we have a gpuCmdBuffer that is filled with instruction for the GPU to process and make the magic happen.
 
-Now we ask the GSP module to render the beautiful gpuCmdBuffer that we have built. We give the GSP module the Virtual Address of the gpuCmdBuffer and it's size. The the GSP module translates this virtual address into a physical address, the GPU can actually use and access.
-And then it gives the GPU the physical address of the gpuCmdBuffer and it's size, and wait's for the GPU to render everything.
+Now we ask the GSP module to render the beautiful gpuCmdBuffer that we have built. We give the GSP module the Virtual Address of the gpuCmdBuffer and it's size. The GSP module translates this virtual address into a physical address, the GPU can actually use and access. Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it's simply a hardcoded offset between the two addresses.
+
+The next stage is giving the GPU the physical address of the gpuCmdBuffer and it's size. And now we wait :)
+We wait for the GPU to render everything we asked for.
 
 We will know that the GPU finished processing the gpuCmdBuffer by getting a signal that indicates the processing has finished. There are multiple signals that the GPU can send, we are waiting for a specific one called `GSPGPU_EVENT_P3D`, that indicates the command processing has finished.
 
@@ -53,3 +55,6 @@ Once we have received that signal we can be sure that the GPU did it's job and t
 ### Diagram!
 
 ![GPU Write Diagram](https://ronpopov.me/images/gpu_processing_diag.png)
+
+
+# TL;DR
