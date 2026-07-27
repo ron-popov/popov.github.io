@@ -25,10 +25,10 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ronpopov.me/gpu-memory-transfers/">
     <meta property="og:site_name" content="Ron Popov">
-    <meta property="og:updated_time" content="2026-07-27T18:10:23.794289652+03:00">
+    <meta property="og:updated_time" content="2026-07-27T23:17:58.905319812+03:00">
     <meta property="article:published_time" content="2026-07-27T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
-    <meta name="twitter:data2" content="6 min">
+    <meta name="twitter:data2" content="8 min">
 </head>
 
 <body class="layout-center" data-theme="terminus">
@@ -50,7 +50,7 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2026-07-27"><time datetime="2026-07-27">2026.07.27</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="1,182 words"><time datetime="PT6M">6 min</time> read</li>
+                    <li title="1,544 words"><time datetime="PT8M">8 min</time> read</li>
                 </ul>
             </header>
 
@@ -125,6 +125,21 @@ Because this is a sysmodule and not a regular title, we can't just use "Game Pat
 <p>The relevant register is R1, which contains the physical memory (after translation from virtual) of the gpuCmdBuffer that is transfered to the GPU by the GSP module.
 As you can see, the physical address of the buffer that pomelo allocated is <code>0x280BBC00</code>. The physical address of the stock homemenu buffer is <code>0x28005AA0</code>.</p>
 <p>Hmmmm, it's not that same, but they are in the same region of memory, with a diff of around 0xB0000 bytes (~700KB), it's probably not substantial enough to be the reason for the hang :(</p>
+<h2 id="what-commands-are-being-passed-to-the-gpu">What commands are being passed to the GPU?</h2>
+<p>While asking claude about the hang i am having, it raised an interesting point. He saw i am using the stock font that comes with the console. Claude was thinking that the font was in some shared memory region that could be unreachable to the GPU.
+I was able to disprove this fairly quickly but this led to an interesting thought.</p>
+<p>If the ProcessCommandList call hangs the GPU, the reason could be one of that commands that the GPU tries to process?
+Maybe one of them tries to access some weird memory region and this hangs the GPU?</p>
+<p>So we dumped the commands from the gpuCmdBuffer by going over the buffer and parsing the commands. They are all practically GPU Register Writes, as this is how most of the interaction between the GPU and the CPU works, by writing to GPU registers.</p>
+<p>One of them popped up right as i dumped the commands from the gpuCmdBuffer, and it was the GPU Register called <strong><code>GPUREG_ATTRIBBUFFERS_LOC</code></strong>
+This register is used as a base address for some of the addr calcualtion that will come after it. When we want to point the GPU at the addr of we only need to give the GPU the offset from the base address, and that way we can save a couple of bytes :)</p>
+<p>The issue is that when the GPU renders vertices (triangles and such, NOT TEXTURES), pomelo is expected to store all the data about the vertices in a buffer in usermode memory, and give the GPU the address of that buffer, which should be allocated in the linear heap.
+However access to the vertices buffer works by giving the GPU a base address + offset.
+But that is an important BUT - the GPU can only access the physical addresses from the base address -&gt; base address + 256MB.
+The default base address in citro3d is 0x18000000, The application region of FCRAM starts at 0x20000000, The system region of FCRAM start at 0x28000000</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #272822;"><code data-lang="plain"><span class="giallo-l"><span>(FCRAM System Region Start) - (Citro3d base address) = Exactly 256MB!</span></span></code></pre>
+<p>Meaning, <strong>THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!</strong>
+The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.</p>
 <h1 id="tl-dr">TL;DR</h1>
 
         </article>

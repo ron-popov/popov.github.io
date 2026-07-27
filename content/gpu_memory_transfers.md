@@ -104,4 +104,29 @@ As you can see, the physical address of the buffer that pomelo allocated is `0x2
 
 Hmmmm, it's not that same, but they are in the same region of memory, with a diff of around 0xB0000 bytes (~700KB), it's probably not substantial enough to be the reason for the hang :(
 
+
+## What commands are being passed to the GPU?
+While asking claude about the hang i am having, it raised an interesting point. He saw i am using the stock font that comes with the console. Claude was thinking that the font was in some shared memory region that could be unreachable to the GPU.
+I was able to disprove this fairly quickly but this led to an interesting thought.
+
+If the ProcessCommandList call hangs the GPU, the reason could be one of that commands that the GPU tries to process?
+Maybe one of them tries to access some weird memory region and this hangs the GPU?
+
+So we dumped the commands from the gpuCmdBuffer by going over the buffer and parsing the commands. They are all practically GPU Register Writes, as this is how most of the interaction between the GPU and the CPU works, by writing to GPU registers.
+
+One of them popped up right as i dumped the commands from the gpuCmdBuffer, and it was the GPU Register called **`GPUREG_ATTRIBBUFFERS_LOC`**
+This register is used as a base address for some of the addr calcualtion that will come after it. When we want to point the GPU at the addr of we only need to give the GPU the offset from the base address, and that way we can save a couple of bytes :)
+
+The issue is that when the GPU renders vertices (triangles and such, NOT TEXTURES), pomelo is expected to store all the data about the vertices in a buffer in usermode memory, and give the GPU the address of that buffer, which should be allocated in the linear heap.
+However access to the vertices buffer works by giving the GPU a base address + offset.
+But that is an important BUT - the GPU can only access the physical addresses from the base address -> base address + 256MB.
+The default base address in citro3d is 0x18000000, The application region of FCRAM starts at 0x20000000, The system region of FCRAM start at 0x28000000
+
+```
+(FCRAM System Region Start) - (Citro3d base address) = Exactly 256MB!
+```
+
+Meaning, **THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!**
+The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.
+
 # TL;DR
