@@ -43,20 +43,34 @@ Now is the Interesting part...
 
 After pomelo added all the textures and everything it wants to render, we have a gpuCmdBuffer that is filled with instruction for the GPU to process and make the magic happen.
 
-There
+Now there are 3 different calls to the GSP module to do in order to render the frame:
 
-Now we ask the GSP module to render the beautiful gpuCmdBuffer that we have built. We give the GSP module the Virtual Address of the gpuCmdBuffer and it's size. The GSP module translates this virtual address into a physical address, the GPU can actually use and access. Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it's simply a hardcoded offset between the two addresses.
+### MemoryFill
+This tells the GPU to clean the VRAM memory. It is used to clear the previous frame before starting to render new stuff on top of it.
 
-The next stage is giving the GPU the physical address of the gpuCmdBuffer and it's size. And now we wait :)
-We wait for the GPU to render everything we asked for.
+### ProcessCommandList
+This command tells the GSP module to render the beautiful gpuCmdBuffer that we have built.
 
-We will know that the GPU finished processing the gpuCmdBuffer by getting a signal that indicates the processing has finished. There are multiple signals that the GPU can send, we are waiting for a specific one called `GSPGPU_EVENT_P3D`, that indicates the command processing has finished.
+We give the GSP module the Virtual Address of the gpuCmdBuffer and it's size. The GSP module translates this virtual address into a physical address, the GPU can actually use and access. Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it's simply a hardcoded offset between the two addresses.
 
-Once we have received that signal we can be sure that the GPU did it's job and the image should now show up on the console.
+Then the GSP module is giving the GPU the physical address of the gpuCmdBuffer and it's size, and the GPU does it's magic.
+
+SPOILER ALERT : This is the call that caused the hang, i will soon explain how i discoverd this.
+
+### DisplayTransfer
+This calls tells the GSP module to tell the GPU to start rendering all the processing it just did.
+
+## Waiting for a return signal
+We will know that the GPU finished what the GSP module asked for, by receiving signals from the GPU that indicate it's status.
+Each such call has a signal of it's own that indicates the action finished:
+* PSC0 - Indicates the MemoryFill finished
+* P3D - Indicates the ProcessCommandList finished
+* PPF - Indicates the DisplayTransfer finished
+
+Once we have received all 3 signals we can be sure that the GPU did it's job and the image should now show up on the console :)
 
 ## Diagram!
 
 ![GPU Write Diagram](https://ronpopov.me/images/gpu_processing_diag.png)
-
 
 # TL;DR
