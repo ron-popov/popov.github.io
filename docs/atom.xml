@@ -76,7 +76,10 @@ Each such call has a signal of it&#x27;s own that indicates the action finished:
 &lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_processing_diag.png&quot; alt=&quot;GPU ProcessCommandList Diagram&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;debugging-the-issue&quot;&gt;Debugging The Issue&lt;&#x2F;h1&gt;
 &lt;p&gt;As i said, after we transfered Pomelo to use the System region in FCRAM (instead of the APP region), pomelo started hanging shortly after booting...&lt;&#x2F;p&gt;
-&lt;p&gt;I would get some text on the top screen, but the bottom screen, where i actually rendered textures and pretty stuff, was empty.&lt;&#x2F;p&gt;
+&lt;p&gt;I would get some text on the top screen, but the bottom screen, where i actually rendered textures and pretty stuff, was empty.
+So i started adding print statements, and i very quickly learned that the part that was hanging pomelo was FrameEnd.&lt;&#x2F;p&gt;
+&lt;p&gt;So i continued debugging, the issue was that we were waiting for a signal that the GPU never sent, but which one?
+I printed all the signals and stubbed some of the calls to the GSP module, and very quickly learned the culprit was &lt;code&gt;ProcessCommandList&lt;&#x2F;code&gt;!.&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;tl-dr&quot;&gt;TL;DR&lt;&#x2F;h1&gt;
 </content>
         
