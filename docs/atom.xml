@@ -73,13 +73,21 @@ Each such call has a signal of it&#x27;s own that indicates the action finished:
 &lt;&#x2F;ul&gt;
 &lt;p&gt;Once we have received all 3 signals we can be sure that the GPU did it&#x27;s job and the image should now show up on the console :)&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;diagram&quot;&gt;Diagram!&lt;&#x2F;h2&gt;
-&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_processing_diag.png&quot; alt=&quot;GPU ProcessCommandList Diagram&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_crash&#x2F;gpu_processing_diag.png&quot; alt=&quot;GPU ProcessCommandList Diagram&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;debugging-the-issue&quot;&gt;Debugging The Issue&lt;&#x2F;h1&gt;
 &lt;p&gt;As i said, after we transfered Pomelo to use the System region in FCRAM (instead of the APP region), pomelo started hanging shortly after booting...&lt;&#x2F;p&gt;
 &lt;p&gt;I would get some text on the top screen, but the bottom screen, where i actually rendered textures and pretty stuff, was empty.
 So i started adding print statements, and i very quickly learned that the part that was hanging pomelo was FrameEnd.&lt;&#x2F;p&gt;
 &lt;p&gt;So i continued debugging, the issue was that we were waiting for a signal that the GPU never sent, but which one?
-I printed all the signals and stubbed some of the calls to the GSP module, and very quickly learned the &lt;strong&gt;culprit was &lt;code&gt;ProcessCommandList&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+I printed all the signals and stubbed each of the calls to the GSP module, and very quickly learned the &lt;strong&gt;culprit was &lt;code&gt;ProcessCommandList&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;virtual-addr-to-physical-addr-translation&quot;&gt;Virtual Addr to Physical Addr Translation&lt;&#x2F;h2&gt;
+&lt;p&gt;I wanted to test if the issue could be in the translation between virtual addr to physical addr by the GSP module.
+I did all sorts of random stuff to test it but the final test was editing the GSP module itself to crash when sending the physical addr to the GPU. The crash would give us the register dump, which would contain the physical addr that was passed to the GPU.&lt;&#x2F;p&gt;
+&lt;p&gt;I used claude to find the exact point in the GSP module that we need to replace with svcBreak, and build me a patch file.
+Because this is a sysmodule and not a regular title, we can&#x27;t just use &quot;Game Patching&quot; like we did in the previous blog, we need to use sysmodule patching, that works by giving Luma3ds a patch file to patch the real GSP module.&lt;&#x2F;p&gt;
+&lt;p&gt;This gave us two crash dumps, one for pomelo, and one for the real homemenu&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_crash&#x2F;screenshot_27-Jul-2026_18-04-40.png&quot; alt=&quot;Pomelo GSP Crash&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_crash&#x2F;screenshot_27-Jul-2026_18-04-54.png&quot; alt=&quot;Stock Homemenu GSP Crash&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;tl-dr&quot;&gt;TL;DR&lt;&#x2F;h1&gt;
 </content>
         

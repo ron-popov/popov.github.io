@@ -72,7 +72,7 @@ Once we have received all 3 signals we can be sure that the GPU did it's job and
 
 ## Diagram!
 
-![GPU ProcessCommandList Diagram](https://ronpopov.me/images/gpu_processing_diag.png)
+![GPU ProcessCommandList Diagram](https://ronpopov.me/images/gpu_crash/gpu_processing_diag.png)
 
 
 # Debugging The Issue
@@ -82,7 +82,19 @@ I would get some text on the top screen, but the bottom screen, where i actually
 So i started adding print statements, and i very quickly learned that the part that was hanging pomelo was FrameEnd.
 
 So i continued debugging, the issue was that we were waiting for a signal that the GPU never sent, but which one?
-I printed all the signals and stubbed some of the calls to the GSP module, and very quickly learned the **culprit was `ProcessCommandList`**.
+I printed all the signals and stubbed each of the calls to the GSP module, and very quickly learned the **culprit was `ProcessCommandList`**.
 
+## Virtual Addr to Physical Addr Translation
+I wanted to test if the issue could be in the translation between virtual addr to physical addr by the GSP module.
+I did all sorts of random stuff to test it but the final test was editing the GSP module itself to crash when sending the physical addr to the GPU. The crash would give us the register dump, which would contain the physical addr that was passed to the GPU.
+
+I used claude to find the exact point in the GSP module that we need to replace with svcBreak, and build me a patch file.
+Because this is a sysmodule and not a regular title, we can't just use "Game Patching" like we did in the previous blog, we need to use sysmodule patching, that works by giving Luma3ds a patch file to patch the real GSP module.
+
+This gave us two crash dumps, one for pomelo, and one for the real homemenu
+
+![Pomelo GSP Crash](https://ronpopov.me/images/gpu_crash/screenshot_27-Jul-2026_18-04-40.png)
+
+![Stock Homemenu GSP Crash](https://ronpopov.me/images/gpu_crash/screenshot_27-Jul-2026_18-04-54.png)
 
 # TL;DR
