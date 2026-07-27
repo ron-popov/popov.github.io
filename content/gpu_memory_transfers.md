@@ -150,7 +150,7 @@ The fix is as easy as bumping the value up to 0x20000000, and it fixes the issue
 The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn't contain FCRAM, it contains VRAM and QTM Memory. I wasn't planning to use them anytime soon, but this is something to be aware of.
 
 
-
+---
 
 
 # TL;DR
