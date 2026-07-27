@@ -53,15 +53,16 @@ All these actions are transformed into commands that are added to the command bu
 &lt;p&gt;Now is the Interesting part...&lt;&#x2F;p&gt;
 &lt;p&gt;After pomelo added all the textures and everything it wants to render, we have a gpuCmdBuffer that is filled with instruction for the GPU to process and make the magic happen.&lt;&#x2F;p&gt;
 &lt;p&gt;Now there are 3 different calls to the GSP module to do in order to render the frame:&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;memoryfill&quot;&gt;MemoryFill&lt;&#x2F;h3&gt;
-&lt;p&gt;This tells the GPU to clean the VRAM memory. It is used to clear the previous frame before starting to render new stuff on top of it.&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;processcommandlist&quot;&gt;ProcessCommandList&lt;&#x2F;h3&gt;
-&lt;p&gt;This command tells the GSP module to render the beautiful gpuCmdBuffer that we have built.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;u&gt;&lt;strong&gt;MemoryFill&lt;&#x2F;strong&gt;&lt;&#x2F;u&gt;
+This tells the GPU to clean the VRAM memory. It is used to clear the previous frame before starting to render new stuff on top of it.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;u&gt;&lt;strong&gt;ProcessCommandList&lt;&#x2F;strong&gt;&lt;&#x2F;u&gt;
+This call is the most complicated by far, so i want to focus on it a bit more. Also (spoiler alert), this is the call that caused pomelo to hang.
+It tells the GSP module to render the beautiful gpuCmdBuffer that we have built.&lt;&#x2F;p&gt;
 &lt;p&gt;We give the GSP module the Virtual Address of the gpuCmdBuffer and it&#x27;s size. The GSP module translates this virtual address into a physical address, the GPU can actually use and access. Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it&#x27;s simply a hardcoded offset between the two addresses.&lt;&#x2F;p&gt;
 &lt;p&gt;Then the GSP module is giving the GPU the physical address of the gpuCmdBuffer and it&#x27;s size, and the GPU does it&#x27;s magic.&lt;&#x2F;p&gt;
 &lt;p&gt;SPOILER ALERT : This is the call that caused the hang, i will soon explain how i discoverd this.&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;displaytransfer&quot;&gt;DisplayTransfer&lt;&#x2F;h3&gt;
-&lt;p&gt;This calls tells the GSP module to tell the GPU to start rendering all the processing it just did.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;u&gt;&lt;strong&gt;DisplayTransfer&lt;&#x2F;strong&gt;&lt;&#x2F;u&gt;
+This calls tells the GSP module to tell the GPU to start rendering all the processing it just did.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;waiting-for-a-return-signal&quot;&gt;Waiting for a return signal&lt;&#x2F;h2&gt;
 &lt;p&gt;We will know that the GPU finished what the GSP module asked for, by receiving signals from the GPU that indicate it&#x27;s status.
 Each such call has a signal of it&#x27;s own that indicates the action finished:&lt;&#x2F;p&gt;

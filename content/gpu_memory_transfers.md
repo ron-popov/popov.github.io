@@ -45,11 +45,12 @@ After pomelo added all the textures and everything it wants to render, we have a
 
 Now there are 3 different calls to the GSP module to do in order to render the frame:
 
-### MemoryFill
+<u>**MemoryFill**</u>
 This tells the GPU to clean the VRAM memory. It is used to clear the previous frame before starting to render new stuff on top of it.
 
-### ProcessCommandList
-This command tells the GSP module to render the beautiful gpuCmdBuffer that we have built.
+<u>**ProcessCommandList**</u>
+This call is the most complicated by far, so i want to focus on it a bit more. Also (spoiler alert), this is the call that caused pomelo to hang.
+It tells the GSP module to render the beautiful gpuCmdBuffer that we have built.
 
 We give the GSP module the Virtual Address of the gpuCmdBuffer and it's size. The GSP module translates this virtual address into a physical address, the GPU can actually use and access. Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it's simply a hardcoded offset between the two addresses.
 
@@ -57,7 +58,7 @@ Then the GSP module is giving the GPU the physical address of the gpuCmdBuffer a
 
 SPOILER ALERT : This is the call that caused the hang, i will soon explain how i discoverd this.
 
-### DisplayTransfer
+<u>**DisplayTransfer**</u>
 This calls tells the GSP module to tell the GPU to start rendering all the processing it just did.
 
 ## Waiting for a return signal
