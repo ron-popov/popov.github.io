@@ -99,4 +99,9 @@ This gave us two crash dumps, one for pomelo, and one for the real homemenu
 **Stock Homemenu GSP Module Crash**
 ![Stock Homemenu GSP Crash](https://ronpopov.me/images/gpu_crash/screenshot_27-Jul-2026_18-04-54.png)
 
+The relevant register is R1, which contains the physical memory (after translation from virtual) of the gpuCmdBuffer that is transfered to the GPU by the GSP module.
+As you can see, the physical address of the buffer that pomelo allocated is `0x280BBC00`. The physical address of the stock homemenu buffer is `0x28005AA0`.
+
+Hmmmm, it's not that same, but they are in the same region of memory, with a diff of around 0xB0000 bytes (~700KB), it's probably not substantial enough to be the reason for the hang :(
+
 # TL;DR

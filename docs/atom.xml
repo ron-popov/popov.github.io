@@ -90,6 +90,9 @@ Because this is a sysmodule and not a regular title, we can&#x27;t just use &quo
 &lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_crash&#x2F;screenshot_27-Jul-2026_18-04-40.png&quot; alt=&quot;Pomelo GSP Crash&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
 &lt;p&gt;&lt;strong&gt;Stock Homemenu GSP Module Crash&lt;&#x2F;strong&gt;
 &lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_crash&#x2F;screenshot_27-Jul-2026_18-04-54.png&quot; alt=&quot;Stock Homemenu GSP Crash&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;The relevant register is R1, which contains the physical memory (after translation from virtual) of the gpuCmdBuffer that is transfered to the GPU by the GSP module.
+As you can see, the physical address of the buffer that pomelo allocated is &lt;code&gt;0x280BBC00&lt;&#x2F;code&gt;. The physical address of the stock homemenu buffer is &lt;code&gt;0x28005AA0&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Hmmmm, it&#x27;s not that same, but they are in the same region of memory, with a diff of around 0xB0000 bytes (~700KB), it&#x27;s probably not substantial enough to be the reason for the hang :(&lt;&#x2F;p&gt;
 &lt;h1 id=&quot;tl-dr&quot;&gt;TL;DR&lt;&#x2F;h1&gt;
 </content>
         
