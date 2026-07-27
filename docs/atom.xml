@@ -4,8 +4,63 @@
     <link rel="self" type="application/atom+xml" href="https://ronpopov.me/atom.xml"/>
     <link rel="alternate" type="text/html" href="https://ronpopov.me"/>
     <generator uri="https://www.getzola.org/">Zola</generator>
-    <updated>2026-07-19T00:00:00+00:00</updated>
+    <updated>2026-07-27T00:00:00+00:00</updated>
     <id>https://ronpopov.me/atom.xml</id>
+    <entry xml:lang="en">
+        <title>GPU Memory Access Bugs</title>
+        <published>2026-07-27T00:00:00+00:00</published>
+        <updated>2026-07-27T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://ronpopov.me/gpu-memory-transfers/"/>
+        <id>https://ronpopov.me/gpu-memory-transfers/</id>
+        
+        <content type="html" xml:base="https://ronpopov.me/gpu-memory-transfers/">&lt;section class=&quot;alert note&quot; role=&quot;note&quot; aria-labelledby=&quot;uzzKAqJk&quot;&gt;
+    &lt;div class=&quot;alert-icon alert-icon-note&quot;&gt;&lt;&#x2F;div&gt;
+    &lt;div class=&quot;alert-content&quot; role=&quot;presentation&quot;&gt;
+        &lt;strong id=&quot;uzzKAqJk&quot; class=&quot;alert-title&quot; aria-hidden=&quot;true&quot;&gt;Disclaimer&lt;&#x2F;strong&gt;
+        &lt;p&gt;This blog contains a lot of content, and i don&#x27;t feel like splitting it into multiple parts, it might be a bit long, there will be a TL;DR at the end&lt;&#x2F;p&gt;
+
+    &lt;&#x2F;div&gt;
+&lt;&#x2F;section&gt;
+&lt;h1 id=&quot;what-s-now&quot;&gt;What&#x27;s now?&lt;&#x2F;h1&gt;
+&lt;p&gt;If you have been following my previous blogs, you will know i am building pomelo, an open source alternative to the stock homemenu.
+And since the homemenu, is a &lt;strong&gt;pretty&lt;&#x2F;strong&gt; critical part of the 3ds console, it&#x27;s kinda harsh.&lt;&#x2F;p&gt;
+&lt;p&gt;In the previous 3 blogs, i was talking about a low level issue. When a 3ds process starts, it requests from the kernel a memory region it can use as heap, and one it can use as linear heap (heap for storing textures). For regular apps, libctru (open source 3ds SDK) just takes care of it, but when you are building a homemenu, it&#x27;s not that simple...&lt;&#x2F;p&gt;
+&lt;p&gt;After i fixed the linear heap allocation, i started having other issues, in mikage everything was working just fine.
+However on real hardware, the rendering failed and after some basic debugging, it&#x27;s seems like the rendering process simply hangs :(&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;3ds-gpu-rendering-process&quot;&gt;3ds GPU Rendering Process&lt;&#x2F;h1&gt;
+&lt;p&gt;Before we talk about what is the issue that i experienced with pomelo, we need to learn a bit about the 3ds rendering process.&lt;&#x2F;p&gt;
+&lt;p&gt;The 3ds has the PICA200 GPU that we will be talking about today. And the GSP module that acts as a driver for communicating with the GPU.
+We also have &lt;code&gt;citro3d&lt;&#x2F;code&gt;, which is a usermode sdk, meaning the it&#x27;s part of the app that wants to render stuff, that we will be using.&lt;&#x2F;p&gt;
+&lt;p&gt;One of the most important parts of the rendering process is the &lt;code&gt;gpuCmdBuffer&lt;&#x2F;code&gt;, it contains all the render instructions for the GPU, including textures to render, text, vectors (lines, rectangles) and etc...
+The &lt;code&gt;gpuCmdBuffer&lt;&#x2F;code&gt; is initialized by citro3d, and allocated in the linear heap of pomele, you should already know what is a linear heap from the previous blog :)&lt;&#x2F;p&gt;
+&lt;p&gt;Assuming we have already initialized everything required for rendering, let&#x27;s look at what happens every frame we render :)&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;frame-init&quot;&gt;Frame Init&lt;&#x2F;h3&gt;
+&lt;p&gt;We start by zeroing out the &lt;code&gt;gpuCmdBuffer&lt;&#x2F;code&gt;, as we don&#x27;t want any garbage or leftovers in that buffer.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;adding-textures-and-vectors&quot;&gt;Adding Textures and Vectors&lt;&#x2F;h3&gt;
+&lt;p&gt;Now is the time for us to get creative :)&lt;&#x2F;p&gt;
+&lt;p&gt;Pomelo now can draw the background, draw the game icons, add the game name and publisher to the frame, basically all the interesting stuff.
+All these actions are transformed into commands that are added to the command buffer. They are not actually rendered, only stored in a temporary buffer, waiting to be flushed to the GPU.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;frame-end&quot;&gt;Frame End&lt;&#x2F;h3&gt;
+&lt;p&gt;Now is the Interesting part...&lt;&#x2F;p&gt;
+&lt;p&gt;After pomelo added all the textures and everything it wants to render, we have a gpuCmdBuffer that is filled with instruction for the GPU to process and make the magic happen.&lt;&#x2F;p&gt;
+&lt;p&gt;Now we ask the GSP module to render the beautiful gpuCmdBuffer that we have built. We give the GSP module the Virtual Address of the gpuCmdBuffer and it&#x27;s size. The the GSP module translates this virtual address into a physical address, the GPU can actually use and access.
+And then it gives the GPU the physical address of the gpuCmdBuffer and it&#x27;s size, and wait&#x27;s for the GPU to render everything.&lt;&#x2F;p&gt;
+&lt;p&gt;We will know that the GPU finished processing the gpuCmdBuffer by getting a signal that indicates the processing has finished. There are multiple signals that the GPU can send, we are waiting for a specific one called &lt;code&gt;GSPGPU_EVENT_P3D&lt;&#x2F;code&gt;, that indicates the command processing has finished.&lt;&#x2F;p&gt;
+&lt;p&gt;Once we have received that signal we can be sure that the GPU did it&#x27;s job and the image should now show up on the console.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;diagram&quot;&gt;Diagram!&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_processing_diag.png&quot; alt=&quot;GPU Write Diagram&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
     <entry xml:lang="en">
         <title>Homemenu Memory Shenanigans - Part 3 - Finalle!</title>
         <published>2026-07-19T00:00:00+00:00</published>
