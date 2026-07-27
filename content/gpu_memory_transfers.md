@@ -140,6 +140,7 @@ Meaning, **THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!**
 The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.
 
 
+![GPU Base Address Diagram](https://ronpopov.me/images/gpu_crash/memory_layout_diag.png)
 
 
 
