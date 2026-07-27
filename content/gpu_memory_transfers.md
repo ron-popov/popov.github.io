@@ -8,6 +8,9 @@ draft = false
 This blog contains a lot of content, and i don't feel like splitting it into multiple parts, it might be a bit long, there will be a TL;DR at the end
 {% end %}
 
+
+
+
 # What's now?
 If you have been following my previous blogs, you will know i am building pomelo, an open source alternative to the stock homemenu.
 And since the homemenu, is a **pretty** critical part of the 3ds console, it's kinda harsh.
@@ -16,6 +19,9 @@ In the previous 3 blogs, i was talking about a low level issue. When a 3ds proce
 
 After i fixed the linear heap allocation, i started having other issues, in mikage everything was working just fine.
 However on real hardware, the rendering failed and after some basic debugging, it's seems like the rendering process simply hangs :(
+
+
+
 
 
 # 3ds GPU Rendering Process
@@ -75,6 +81,10 @@ Once we have received all 3 signals we can be sure that the GPU did it's job and
 ![GPU ProcessCommandList Diagram](https://ronpopov.me/images/gpu_crash/gpu_processing_diag.png)
 
 
+
+
+
+
 # Debugging The Issue
 As i said, after we transfered Pomelo to use the System region in FCRAM (instead of the APP region), pomelo started hanging shortly after booting...
 
@@ -130,9 +140,17 @@ Meaning, **THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!**
 The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.
 
 
+
+
+
+
 # The Fix
 The fix is as easy as bumping the value up to 0x20000000, and it fixes the issues.
 The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn't contain FCRAM, it contains VRAM and QTM Memory. I wasn't planning to use them anytime soon, but this is something to be aware of.
+
+
+
+
 
 # TL;DR
 1. We changed pomelo to use SYSTEM region of FCRAM, instead of APPLICATION region of FCRAM.
