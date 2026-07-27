@@ -130,7 +130,7 @@ This register is used as a base address for some of the addr calcualtion that wi
 The issue is that when the GPU renders vertices (triangles and such, NOT TEXTURES), pomelo is expected to store all the data about the vertices in a buffer in usermode memory, and give the GPU the address of that buffer, which should be allocated in the linear heap.
 However access to the vertices buffer works by giving the GPU a base address + offset.
 But that is an important BUT - the GPU can only access the physical addresses from the base address -> base address + 256MB.
-The default base address in citro3d is 0x18000000, The application region of FCRAM starts at 0x20000000, The system region of FCRAM start at 0x28000000
+The default base address in citro3d is 0x18000000, The application region of FCRAM starts at 0x20000000, **The system region of FCRAM start at 0x28000000**
 
 ```
 (FCRAM System Region Start) - (Citro3d base address) = Exactly 256MB!

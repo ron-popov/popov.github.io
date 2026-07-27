@@ -25,7 +25,7 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ronpopov.me/gpu-memory-transfers/">
     <meta property="og:site_name" content="Ron Popov">
-    <meta property="og:updated_time" content="2026-07-27T23:51:43.919210906+03:00">
+    <meta property="og:updated_time" content="2026-07-27T23:52:49.090717586+03:00">
     <meta property="article:published_time" content="2026-07-27T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
     <meta name="twitter:data2" content="9 min">
@@ -136,7 +136,7 @@ This register is used as a base address for some of the addr calcualtion that wi
 <p>The issue is that when the GPU renders vertices (triangles and such, NOT TEXTURES), pomelo is expected to store all the data about the vertices in a buffer in usermode memory, and give the GPU the address of that buffer, which should be allocated in the linear heap.
 However access to the vertices buffer works by giving the GPU a base address + offset.
 But that is an important BUT - the GPU can only access the physical addresses from the base address -&gt; base address + 256MB.
-The default base address in citro3d is 0x18000000, The application region of FCRAM starts at 0x20000000, The system region of FCRAM start at 0x28000000</p>
+The default base address in citro3d is 0x18000000, The application region of FCRAM starts at 0x20000000, <strong>The system region of FCRAM start at 0x28000000</strong></p>
 <pre class="giallo" style="color: #F8F8F2; background-color: #272822;"><code data-lang="plain"><span class="giallo-l"><span>(FCRAM System Region Start) - (Citro3d base address) = Exactly 256MB!</span></span></code></pre>
 <p>Meaning, <strong>THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!</strong>
 The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.</p>
