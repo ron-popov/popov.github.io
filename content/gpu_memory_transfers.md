@@ -93,8 +93,10 @@ Because this is a sysmodule and not a regular title, we can't just use "Game Pat
 
 This gave us two crash dumps, one for pomelo, and one for the real homemenu
 
+**Pomelo GSP Module Crash**
 ![Pomelo GSP Crash](https://ronpopov.me/images/gpu_crash/screenshot_27-Jul-2026_18-04-40.png)
 
+**Stock Homemenu GSP Module Crash**
 ![Stock Homemenu GSP Crash](https://ronpopov.me/images/gpu_crash/screenshot_27-Jul-2026_18-04-54.png)
 
 # TL;DR
