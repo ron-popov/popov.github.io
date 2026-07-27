@@ -11,7 +11,7 @@ This blog contains a lot of content, and i don't feel like splitting it into mul
 
 
 
-# What's now?
+# <h1 style="text-align: center;">What's now?</h1>
 If you have been following my previous blogs, you will know i am building pomelo, an open source alternative to the stock homemenu.
 And since the homemenu, is a **pretty** critical part of the 3ds console, it's kinda harsh.
 
@@ -25,7 +25,6 @@ However on real hardware, the rendering failed and after some basic debugging, i
 
 
 # <h1 style="text-align: center;">3ds GPU Rendering Process</h1>
-<h1 style="text-align: center;">3ds GPU Rendering Process</h1>
 Before we talk about what is the issue that i experienced with pomelo, we need to learn a bit about the 3ds rendering process.
 
 The 3ds has the PICA200 GPU that we will be talking about today. And the GSP module that acts as a driver for communicating with the GPU.
@@ -85,8 +84,7 @@ Once we have received all 3 signals we can be sure that the GPU did it's job and
 
 ---
 
-
-# Debugging The Issue
+# <h1 style="text-align: center;">Debugging The Issue</h1>
 As i said, after we transfered Pomelo to use the System region in FCRAM (instead of the APP region), pomelo started hanging shortly after booting...
 
 I would get some text on the top screen, but the bottom screen, where i actually rendered textures and pretty stuff, was empty.
@@ -145,16 +143,14 @@ The border of the region which the GPU can access is exactly where the System Re
 
 
 
-
-# The Fix
+# <h1 style="text-align: center;">The Fix</h1>
 The fix is as easy as bumping the value up to 0x20000000, and it fixes the issues.
 The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn't contain FCRAM, it contains VRAM and QTM Memory. I wasn't planning to use them anytime soon, but this is something to be aware of.
 
 
 ---
 
-
-# TL;DR
+# <h1 style="text-align: center;">TL;DR</h1>
 1. We changed pomelo to use SYSTEM region of FCRAM, instead of APPLICATION region of FCRAM.
 2. When drawing a frame we give the GPU a vertices buffer that is stored in the linear heap. The access is done by specifying a base address, that is hardcoded in the SDK we are using, and also an offset from the base address.
 3. The GPU can only access the 256MB of memory after the base address.

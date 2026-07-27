@@ -30,7 +30,7 @@
 
     &lt;&#x2F;div&gt;
 &lt;&#x2F;section&gt;
-&lt;h1 id=&quot;what-s-now&quot;&gt;What&#x27;s now?&lt;&#x2F;h1&gt;
+&lt;h1 id=&quot;what-s-now&quot;&gt;&lt;h1 style=&quot;text-align: center;&quot;&gt;What&#x27;s now?&lt;&#x2F;h1&gt;&lt;&#x2F;h1&gt;
 &lt;p&gt;If you have been following my previous blogs, you will know i am building pomelo, an open source alternative to the stock homemenu.
 And since the homemenu, is a &lt;strong&gt;pretty&lt;&#x2F;strong&gt; critical part of the 3ds console, it&#x27;s kinda harsh.&lt;&#x2F;p&gt;
 &lt;p&gt;In the previous 3 blogs, i was talking about a low level issue. When a 3ds process starts, it requests from the kernel a memory region it can use as heap, and one it can use as linear heap (heap for storing textures). For regular apps, libctru (open source 3ds SDK) just takes care of it, but when you are building a homemenu, it&#x27;s not that simple...&lt;&#x2F;p&gt;
@@ -38,8 +38,7 @@ And since the homemenu, is a &lt;strong&gt;pretty&lt;&#x2F;strong&gt; critical p
 However on real hardware, the rendering failed and after some basic debugging, it&#x27;s seems like the rendering process simply hangs :(&lt;&#x2F;p&gt;
 &lt;hr &#x2F;&gt;
 &lt;h1 id=&quot;3ds-gpu-rendering-process&quot;&gt;&lt;h1 style=&quot;text-align: center;&quot;&gt;3ds GPU Rendering Process&lt;&#x2F;h1&gt;&lt;&#x2F;h1&gt;
-&lt;h1 style=&quot;text-align: center;&quot;&gt;3ds GPU Rendering Process&lt;&#x2F;h1&gt;
-Before we talk about what is the issue that i experienced with pomelo, we need to learn a bit about the 3ds rendering process.
+&lt;p&gt;Before we talk about what is the issue that i experienced with pomelo, we need to learn a bit about the 3ds rendering process.&lt;&#x2F;p&gt;
 &lt;p&gt;The 3ds has the PICA200 GPU that we will be talking about today. And the GSP module that acts as a driver for communicating with the GPU.
 We also have &lt;code&gt;citro3d&lt;&#x2F;code&gt;, which is a usermode sdk, meaning the it&#x27;s part of the app that wants to render stuff, that we will be using.&lt;&#x2F;p&gt;
 &lt;p&gt;Assuming we have already initialized everything required for rendering, let&#x27;s look at what happens every frame we render :)&lt;&#x2F;p&gt;
@@ -77,7 +76,7 @@ Each such call has a signal of it&#x27;s own that indicates the action finished:
 &lt;h2 id=&quot;diagram&quot;&gt;Diagram!&lt;&#x2F;h2&gt;
 &lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_crash&#x2F;gpu_processing_diag.png&quot; alt=&quot;GPU ProcessCommandList Diagram&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
 &lt;hr &#x2F;&gt;
-&lt;h1 id=&quot;debugging-the-issue&quot;&gt;Debugging The Issue&lt;&#x2F;h1&gt;
+&lt;h1 id=&quot;debugging-the-issue&quot;&gt;&lt;h1 style=&quot;text-align: center;&quot;&gt;Debugging The Issue&lt;&#x2F;h1&gt;&lt;&#x2F;h1&gt;
 &lt;p&gt;As i said, after we transfered Pomelo to use the System region in FCRAM (instead of the APP region), pomelo started hanging shortly after booting...&lt;&#x2F;p&gt;
 &lt;p&gt;I would get some text on the top screen, but the bottom screen, where i actually rendered textures and pretty stuff, was empty.
 So i started adding print statements, and i very quickly learned that the part that was hanging pomelo was FrameEnd.&lt;&#x2F;p&gt;
@@ -112,11 +111,11 @@ The default base address in citro3d is 0x18000000, The application region of FCR
 &lt;p&gt;Meaning, &lt;strong&gt;THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!&lt;&#x2F;strong&gt;
 The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.&lt;&#x2F;p&gt;
 &lt;p&gt;&lt;img src=&quot;https:&#x2F;&#x2F;ronpopov.me&#x2F;images&#x2F;gpu_crash&#x2F;memory_layout_diag.png&quot; alt=&quot;GPU Base Address Diagram&quot; &#x2F;&gt;&lt;&#x2F;p&gt;
-&lt;h1 id=&quot;the-fix&quot;&gt;The Fix&lt;&#x2F;h1&gt;
+&lt;h1 id=&quot;the-fix&quot;&gt;&lt;h1 style=&quot;text-align: center;&quot;&gt;The Fix&lt;&#x2F;h1&gt;&lt;&#x2F;h1&gt;
 &lt;p&gt;The fix is as easy as bumping the value up to 0x20000000, and it fixes the issues.
 The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn&#x27;t contain FCRAM, it contains VRAM and QTM Memory. I wasn&#x27;t planning to use them anytime soon, but this is something to be aware of.&lt;&#x2F;p&gt;
 &lt;hr &#x2F;&gt;
-&lt;h1 id=&quot;tl-dr&quot;&gt;TL;DR&lt;&#x2F;h1&gt;
+&lt;h1 id=&quot;tl-dr&quot;&gt;&lt;h1 style=&quot;text-align: center;&quot;&gt;TL;DR&lt;&#x2F;h1&gt;&lt;&#x2F;h1&gt;
 &lt;ol&gt;
 &lt;li&gt;We changed pomelo to use SYSTEM region of FCRAM, instead of APPLICATION region of FCRAM.&lt;&#x2F;li&gt;
 &lt;li&gt;When drawing a frame we give the GPU a vertices buffer that is stored in the linear heap. The access is done by specifying a base address, that is hardcoded in the SDK we are using, and also an offset from the base address.&lt;&#x2F;li&gt;
