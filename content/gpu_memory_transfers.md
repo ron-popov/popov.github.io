@@ -145,7 +145,7 @@ The border of the region which the GPU can access is exactly where the System Re
 
 # <h1 style="text-align: center;">The Fix</h1>
 The fix is as easy as bumping the value up to 0x20000000, and it fixes the issues.
-The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn't contain FCRAM, it contains VRAM and QTM Memory. I wasn't planning to use them anytime soon, but this is something to be aware of.
+The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn't contain FCRAM, it contains VRAM and QTM Memory. I wasn't planning to use them anytime soon (and not really even sure how to do so), but this is something to be aware of.
 
 
 ---
