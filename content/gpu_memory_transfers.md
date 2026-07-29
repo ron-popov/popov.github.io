@@ -147,6 +147,19 @@ The border of the region which the GPU can access is exactly where the System Re
 The fix is as easy as bumping the value up to 0x20000000, and it fixes the issues.
 The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn't contain FCRAM, it contains VRAM and QTM Memory. I wasn't planning to use them anytime soon (and not really even sure how to do so), but this is something to be aware of.
 
+---
+
+# <h1 style="text-align: center;">What This Means For Pomelo?</h1>
+Now that pomelo is using the SYSTEM region of FCRAM, a lot of games that didn't previously boot, boot just fine now. Even big titles like Mario Kart 7, and the Pokemon games
+
+This is one of the bigggest challenges i have faced when building Pomelo, and i think it's safe to say that we have covered most of the hard R&D parts.
+Now, what we have left is making it more usable and actually a good UX, with things such as:
+* Better shutdown sequence
+* Improve the return to menu sequence
+* Better UI
+* Show system stats
+
+And much more...
 
 ---
 
