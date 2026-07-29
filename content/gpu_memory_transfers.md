@@ -152,7 +152,7 @@ The obvious caveate is that we cannot store the vertices buffer in the address r
 # <h1 style="text-align: center;">What This Means For Pomelo?</h1>
 Now that pomelo is using the SYSTEM region of FCRAM, a lot of games that didn't previously boot, boot just fine now. Even big titles like Mario Kart 7, and the Pokemon games
 
-This is one of the bigggest challenges i have faced when building Pomelo, and i think it's safe to say that we have covered most of the hard R&D parts.
+This is one of the bigggest challenges i have faced when building Pomelo, and i think it's safe to say that we have solved most of the hard R&D parts in pomelo.
 Now, what we have left is making it more usable and actually a good UX, with things such as:
 * Better shutdown sequence
 * Improve the return to menu sequence
