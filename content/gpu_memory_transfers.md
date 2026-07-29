@@ -1,6 +1,6 @@
 +++
 title = "Debugging GPU Memory Access"
-date = 2026-07-27
+date = 2026-07-29
 draft = false
 +++
 
