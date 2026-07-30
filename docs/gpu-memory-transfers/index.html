@@ -25,10 +25,10 @@
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://ronpopov.me/gpu-memory-transfers/">
     <meta property="og:site_name" content="Ron Popov">
-    <meta property="og:updated_time" content="2026-07-29T11:06:18.095710066+03:00">
+    <meta property="og:updated_time" content="2026-07-31T00:56:32.655940502+03:00">
     <meta property="article:published_time" content="2026-07-29T00:00:00+00:00">
     <meta name="twitter:label2" content="Reading time">
-    <meta name="twitter:data2" content="1&lt;1 min">
+    <meta name="twitter:data2" content="11 min">
 </head>
 
 <body class="layout-center" data-theme="terminus">
@@ -50,7 +50,7 @@
                 <ul class="post-meta hidden">
                     <li title="Published on 2026-07-29"><time datetime="2026-07-29">2026.07.29</time></li>
                     <li role="separator" aria-hidden="true">::</li>
-                    <li title="1,880 words"><time datetime="PT10M">1&lt;1 min</time> read</li>
+                    <li title="2,059 words"><time datetime="PT11M">11 min</time> read</li>
                 </ul>
             </header>
 
@@ -65,40 +65,42 @@
 <h1 id="what-s-now"><h1 style="text-align: center;">What's now?</h1></h1>
 <p>If you have been following my previous blogs, you will know i am building pomelo, an open source alternative to the stock homemenu.
 And since the homemenu, is a <strong>pretty</strong> critical part of the 3ds console, it's kinda harsh.</p>
-<p>In the previous 3 blogs, i was talking about a low level issue. When a 3ds process starts, it requests from the kernel a memory region it can use as heap, and one it can use as linear heap (heap for storing textures). For regular apps, libctru (open source 3ds SDK) just takes care of it, but when you are building a homemenu, it's not that simple...</p>
+<p>In the previous 3 blogs, i was talking about a low level issue. When a 3ds process starts, it requests from the kernel a memory region it can use as heap, and one it can use as linear heap - heap for storing textures and GPU stuff.
+The unique part about linear heap, is that it's continous in the physical memory as well. This is very important when storing buffers that the GPU will access, as the GPU doesn't have an MMU and works mostly with physical addresses.</p>
+<p>For regular apps, libctru (open source 3ds SDK) just takes care of it, but when you are building a homemenu, it's not that simple...</p>
 <p>After i fixed the linear heap allocation, i started having other issues, in mikage everything was working just fine.
 However on real hardware, the rendering failed and after some basic debugging, it's seems like the rendering process simply hangs :(</p>
 <hr />
 <h1 id="3ds-gpu-rendering-process"><h1 style="text-align: center;">3ds GPU Rendering Process</h1></h1>
 <p>Before we talk about what is the issue that i experienced with pomelo, we need to learn a bit about the 3ds rendering process.</p>
-<p>The 3ds has the PICA200 GPU that we will be talking about today. And the GSP module that acts as a driver for communicating with the GPU.
-We also have <code>citro3d</code>, which is a usermode sdk, meaning the it's part of the app that wants to render stuff, that we will be using.</p>
+<p>The 3ds has the PICA200 GPU that we will be talking about today. And a sysmodule called the <code>GSP</code> module that acts as a driver for communicating with the GPU.
+We also have <code>citro3d</code>, which is a usermode sdk, meaning the it's part of the app that wants to render stuff, that we will be using as an abstraction layer.</p>
 <p>Assuming we have already initialized everything required for rendering, let's look at what happens every frame we render :)</p>
 <h2 id="frame-init">Frame Init</h2>
+<p>One of the most important parts of the rendering process is the <code>gpuCmdBuffer</code>, it contains all the render instructions for the GPU, including textures to render, text, vectors (lines, rectangles). It also includes the physical addresses that point to the location of these textures, vectors in physical memory. Again, the GPU doesn't really know what virtaul memory is.</p>
+<p>The <code>gpuCmdBuffer</code> is initialized by citro3d, and allocated in the linear heap of pomele, you should already know what is a linear heap from the previous blog :)</p>
 <p>We start by zeroing out the <code>gpuCmdBuffer</code>, as we don't want any garbage or leftovers in that buffer.</p>
-<p>One of the most important parts of the rendering process is the <code>gpuCmdBuffer</code>, it contains all the render instructions for the GPU, including textures to render, text, vectors (lines, rectangles) and etc...
-The <code>gpuCmdBuffer</code> is initialized by citro3d, and allocated in the linear heap of pomele, you should already know what is a linear heap from the previous blog :)</p>
 <h2 id="adding-textures-and-vectors">Adding Textures and Vectors</h2>
 <p>Now is the time for us to get creative :)</p>
 <p>Pomelo now can draw the background, draw the game icons, add the game name and publisher to the frame, basically all the interesting stuff.
 All these actions are transformed into commands that are added to the command buffer. They are not actually rendered, only stored in a temporary buffer, waiting to be flushed to the GPU.</p>
 <h2 id="frame-end">Frame End</h2>
 <p>Now is the Interesting part...</p>
-<p>After pomelo added all the textures and everything it wants to render, we have a gpuCmdBuffer that is filled with instruction for the GPU to process and make the magic happen.</p>
+<p>After pomelo added all the textures and everything it wants to render, we have a <code>gpuCmdBuffer</code> that is filled with instructions for the GPU to process and make the magic happen.</p>
 <p>Now there are 3 different calls to the GSP module to do in order to render the frame:</p>
 <h3 id="1-memoryfill">1. MemoryFill</h3>
 <p>This tells the GPU to clean the VRAM memory. It is used to clear the previous frame before starting to render new stuff on top of it.</p>
 <h3 id="2-processcommandlist">2. ProcessCommandList</h3>
-<p>This call is the most complicated by far, so i want to focus on it a bit more. Also (spoiler alert), this is the call that caused pomelo to hang.
-It tells the GSP module to render the beautiful gpuCmdBuffer that we have built.</p>
-<p>We give the GSP module the Virtual Address of the gpuCmdBuffer and it's size. The GSP module translates this virtual address into a physical address, the GPU can actually use and access. Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it's simply a hardcoded offset between the two addresses.</p>
-<p>Then the GSP module is giving the GPU the physical address of the gpuCmdBuffer and it's size, and the GPU does it's magic.</p>
-<p>SPOILER ALERT : This is the call that caused the hang, i will soon explain how i discoverd this.</p>
+<p>This call is the most complicated by far, so i want to focus on it a bit more. Also (spoiler alert), this is the call that caused pomelo to hang, we will talk more about it very soon.</p>
+<p>It tells the GSP module to render the beautiful <code>gpuCmdBuffer</code> that we have built.</p>
+<p>We give the <strong>GSP module</strong> the Virtual Address of the <code>gpuCmdBuffer</code> and it's size. The GSP module translates this virtual address into a physical address, that the GPU can actually use and access.</p>
+<p>Unlike other common operating systems, on the 3ds translating the virtual address to a physical address is fairly easy, in most cases it's simply a hardcoded offset between the two addresses.</p>
+<p>Then the GSP module is giving the GPU the physical address of the <code>gpuCmdBuffer</code> and it's size, and the GPU does it's magic.</p>
 <h3 id="3-displaytransfer">3. DisplayTransfer</h3>
-<p>This calls tells the GSP module to tell the GPU to start rendering all the processing it just did.</p>
+<p>This call tells the GSP module to tell the GPU to start rendering all the processing it just did.</p>
 <h2 id="waiting-for-a-return-signal">Waiting for a Return Signal</h2>
 <p>We will know that the GPU finished what the GSP module asked for, by receiving signals from the GPU that indicate it's status.
-Each such call has a signal of it's own that indicates the action finished:</p>
+Each such GSP call has a signal of it's own that indicates the action finished:</p>
 <ul>
 <li>PSC0 - Indicates the MemoryFill finished</li>
 <li>P3D - Indicates the ProcessCommandList finished</li>
@@ -109,39 +111,43 @@ Each such call has a signal of it's own that indicates the action finished:</p>
 <p><img src="https://ronpopov.me/images/gpu_crash/gpu_processing_diag.png" alt="GPU ProcessCommandList Diagram" /></p>
 <hr />
 <h1 id="debugging-the-issue"><h1 style="text-align: center;">Debugging The Issue</h1></h1>
-<p>As i said, after we transfered Pomelo to use the System region in FCRAM (instead of the APP region), pomelo started hanging shortly after booting...</p>
+<p>After we transfered Pomelo to use the System region in FCRAM, instead of the APP region, which you can read more about in the previous blogs.
+I suddenly noticed that pomelo started hanging shortly after booting...</p>
 <p>I would get some text on the top screen, but the bottom screen, where i actually rendered textures and pretty stuff, was empty.
 So i started adding print statements, and i very quickly learned that the part that was hanging pomelo was FrameEnd.</p>
-<p>So i continued debugging, the issue was that we were waiting for a signal that the GPU never sent, but which one?
-I printed all the signals and stubbed each of the calls to the GSP module, and very quickly learned the <strong>culprit was <code>ProcessCommandList</code></strong>.</p>
+<p>So i continued debugging, and the issue was that we were waiting for a signal that the GPU never sent, but which signal is the missing one?</p>
+<p>I printed all the signals and stubbed each of the calls to the GSP module, to identify the GSP call that was causing the hang, and i learned that the <strong>culprit was <code>ProcessCommandList</code></strong>.</p>
 <h3 id="virtual-addr-to-physical-addr-translation">Virtual Addr to Physical Addr Translation</h3>
-<p>I wanted to test if the issue could be in the translation between virtual addr to physical addr by the GSP module.
-I did all sorts of random stuff to test it but the final test was editing the GSP module itself to crash when sending the physical addr to the GPU. The crash would give us the register dump, which would contain the physical addr that was passed to the GPU.</p>
+<p>I wanted to test if the issue could be in the translation between virtual addr to physical addr by the GSP module.</p>
+<p>There were some changes to the address of VADDR in kernel version 2.44 of the 3ds kernel, and that was my first suspect.</p>
+<p>I did all sorts of random stuff to test it, but the final test was editing the GSP module itself to crash when sending the physical addr to the GPU. The crash would give us the register dump, which would contain the physical addr that was passed to the GPU.</p>
 <p>I used claude to find the exact point in the GSP module that we need to replace with svcBreak, and build me a patch file.
-Because this is a sysmodule and not a regular title, we can't just use "Game Patching" like we did in the previous blog, we need to use sysmodule patching, that works by giving Luma3ds a patch file to patch the real GSP module.</p>
+Because this is a sysmodule and not a regular title, we can't use "Game Patching" like we did in the previous blog, we need to use "sysmodule patching", that works by giving Luma3ds a patch file to patch the real GSP module.</p>
 <p>This gave us two crash dumps, one for pomelo, and one for the real homemenu</p>
 <p><strong>Pomelo GSP Module Crash</strong>
 <img src="https://ronpopov.me/images/gpu_crash/screenshot_27-Jul-2026_18-04-40.png" alt="Pomelo GSP Crash" /></p>
 <p><strong>Stock Homemenu GSP Module Crash</strong>
 <img src="https://ronpopov.me/images/gpu_crash/screenshot_27-Jul-2026_18-04-54.png" alt="Stock Homemenu GSP Crash" /></p>
 <p>The relevant register is R1, which contains the physical memory (after translation from virtual) of the gpuCmdBuffer that is transfered to the GPU by the GSP module.
-As you can see, the physical address of the buffer that pomelo allocated is <code>0x280BBC00</code>. The physical address of the stock homemenu buffer is <code>0x28005AA0</code>.</p>
+As you can see in the crash dumps, the physical address of the buffer that pomelo allocated is <code>0x280BBC00</code>. The physical address of the stock homemenu buffer is <code>0x28005AA0</code>.</p>
 <p>Hmmmm, it's not that same, but they are in the same region of memory, with a diff of around 0xB0000 bytes (~700KB), it's probably not substantial enough to be the reason for the hang :(</p>
 <h3 id="what-commands-are-being-passed-to-the-gpu">What commands are being passed to the GPU?</h3>
-<p>While asking claude about the hang i am having, it raised an interesting point. He saw i am using the stock font that comes with the console. Claude was thinking that the font was in some shared memory region that could be unreachable to the GPU.
+<p>I was trying to get claude to fix the hanging GPU issue, not with much success :(</p>
+<p>But it did raise an interesting point. He saw i am using the stock font that comes with the console. Claude was thinking that the font was in some shared memory region that could be unreachable to the GPU.
 I was able to disprove this fairly quickly but this led to an interesting thought.</p>
 <p>If the ProcessCommandList call hangs the GPU, the reason could be one of that commands that the GPU tries to process?
-Maybe one of them tries to access some weird memory region and this hangs the GPU?</p>
-<p>So we dumped the commands from the gpuCmdBuffer by going over the buffer and parsing the commands. They are all practically GPU Register Writes, as this is how most of the interaction between the GPU and the CPU works, by writing to GPU registers.</p>
-<p>One of them popped up right as i dumped the commands from the gpuCmdBuffer, and it was the GPU Register called <strong><code>GPUREG_ATTRIBBUFFERS_LOC</code></strong>
-This register is used as a base address for some of the addr calcualtion that will come after it. When we want to point the GPU at the addr of we only need to give the GPU the offset from the base address, and that way we can save a couple of bytes :)</p>
-<p>The issue is that when the GPU renders vertices (triangles and such, NOT TEXTURES), pomelo is expected to store all the data about the vertices in a buffer in usermode memory, and give the GPU the address of that buffer, which should be allocated in the linear heap.
-However access to the vertices buffer works by giving the GPU a base address + offset.
-But that is an important BUT - the GPU can only access the physical addresses from the base address -&gt; base address + 256MB.
-The default base address in citro3d is 0x18000000, The application region of FCRAM starts at 0x20000000, <strong>The system region of FCRAM start at 0x28000000</strong></p>
-<pre class="giallo" style="color: #F8F8F2; background-color: #272822;"><code data-lang="plain"><span class="giallo-l"><span>(FCRAM System Region Start) - (Citro3d base address) = Exactly 256MB!</span></span></code></pre>
+Maybe one of them tries to access some weird memory region and this hangs the GPU? Maybe one of the textures / vectors / whatever is passed to the GPU, is mapped in some weird memory region, that the GPU cannot access?</p>
+<p>There is only one way to find out!</p>
+<p>So we dumped the commands from the <code>gpuCmdBuffer</code> by going over the buffer and parsing the commands in the buffer. In practice, they are all GPU Register Writes, as this is how most of the interaction between the GPU and the CPU works, by writing to GPU registers.</p>
+<p>One of them popped up right as i dumped the commands from the <code>gpuCmdBuffer</code>, and it was the GPU Register called <strong><code>GPUREG_ATTRIBBUFFERS_LOC</code></strong>
+This register is used as a base address for passing addresses of vertex buffer. When we want to point the GPU at the addr of a certain vertex buffer, we only need to give the GPU the offset from the base address, and that way we can save a couple of bytes :)</p>
+<p>When the GPU renders vertices (triangles and such, NOT TEXTURES), pomelo is expected to store all the data about the vertices in a buffer in it's own memory, and give the GPU the address of that buffer, which should be allocated in the linear heap. Access to the vertices buffers works by giving the GPU a base address + offset.</p>
+<p>But that is an important BUT - <strong>the GPU can only access the first 256MB from the base address</strong>, meaning the physical addresses that can be accesses are, base address -&gt; base address + 256MB.</p>
+<p>Let's look at the numbers, shall we?</p>
+<p>The default base address in citro3d is <code>0x18000000</code>, The application region of FCRAM starts at <code>0x20000000</code>, <strong>The system region of FCRAM start at <code>0x28000000</code></strong></p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #272822;"><code data-lang="plain"><span class="giallo-l"><span>(FCRAM System Region Start) - (Citro3d base address) = 0x28000000 - 0x18000000 = 0x10000000 = Exactly 256MB!</span></span></code></pre>
 <p>Meaning, <strong>THE GPU CANNOT ACCESS THE SYSTEM REGION OF FCRAM!</strong>
-The border of the region which the GPU can access is exactly where the System Region of FCRAM starts.</p>
+The border of the region which the GPU can access is exactly where the System Region of FCRAM starts!</p>
 <p><img src="https://ronpopov.me/images/gpu_crash/memory_layout_diag.png" alt="GPU Base Address Diagram" /></p>
 <hr />
 <h1 id="the-fix"><h1 style="text-align: center;">The Fix</h1></h1>
@@ -149,7 +155,7 @@ The border of the region which the GPU can access is exactly where the System Re
 The obvious caveate is that we cannot store the vertices buffer in the address range between 0x18000000 - 0x20000000, now that region doesn't contain FCRAM, it contains VRAM and QTM Memory. I wasn't planning to use them anytime soon (and not really even sure how to do so), but this is something to be aware of.</p>
 <hr />
 <h1 id="what-this-means-for-pomelo"><h1 style="text-align: center;">What This Means For Pomelo?</h1></h1>
-<p>Now that pomelo is using the SYSTEM region of FCRAM, a lot of games that didn't previously boot, boot just fine now. Even big titles like Mario Kart 7, and the Pokemon games</p>
+<p>Now that pomelo is using the SYSTEM region of FCRAM, a lot of games that didn't previously boot, boot just fine now. Even big titles like Mario Kart 7, and the Pokemon games!</p>
 <p>This is one of the bigggest challenges i have faced when building Pomelo, and i think it's safe to say that we have solved most of the hard R&amp;D parts in pomelo.
 Now, what we have left is making it more usable and actually a good UX, with things such as:</p>
 <ul>
